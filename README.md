@@ -22,7 +22,7 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 
 ## Basic Functionality
 - [ ] Hit GraphQL endpoint with a query using code from https://package.elm-lang.org/packages/ghivert/elm-graphql/latest/
-- [ ] Store query results in a JsonTree https://github.com/klazuka/elm-json-tree-view/blob/master/src/JsonTree.elm
+- [ ] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [ ] Display output
 
 ## Views
