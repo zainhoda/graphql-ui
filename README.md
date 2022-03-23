@@ -3,6 +3,11 @@ Autogenerate a user interface (UI) for queries and mutations from a GraphQL sche
 
 Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 
+# Goals
+- No backend -- the only backend is the GraphQL endpoint
+- Loadable via CDN `<script>` tag 
+- Configurable using Elm flags https://guide.elm-lang.org/interop/flags.html
+
 # TODO
 
 ## Startup
@@ -16,7 +21,7 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Model Mutations
 
 ## Basic Functionality
-- [ ] Hit GraphQL endpoint with a query
+- [ ] Hit GraphQL endpoint with a query using code from https://package.elm-lang.org/packages/ghivert/elm-graphql/latest/
 - [ ] Store query results in a JsonTree https://github.com/klazuka/elm-json-tree-view/blob/master/src/JsonTree.elm
 - [ ] Display output
 
