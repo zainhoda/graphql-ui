@@ -13,7 +13,9 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 ## Startup
 - [x] Specify a GraphQL endpoint in a JSON config
 - [x] Read the JSON config into Elm
-- [ ] Use introspection to get information on types, queries, and mutations
+- [x] Store introspection query as a const
+- [x] Send introspection query in query body
+- [x] Use the decoder from https://github.com/dillonkearns/elm-graphql/blob/master/generator/src/Graphql/Parser.elm#L13-L15
 
 ## Initial Models
 - [ ] Model Types
@@ -21,7 +23,7 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Model Mutations
 
 ## Basic Functionality
-- [ ] Hit GraphQL endpoint with a query using code from https://package.elm-lang.org/packages/ghivert/elm-graphql/latest/
+- [x] Hit GraphQL endpoint with a query using code from https://package.elm-lang.org/packages/ghivert/elm-graphql/latest/
 - [ ] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [ ] Display output
 

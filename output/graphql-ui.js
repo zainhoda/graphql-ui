@@ -6138,295 +6138,677 @@ var $author$project$Main$subscriptions = function (_v0) {
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Main$NoOp = {$: 'NoOp'};
-var $elm$core$Debug$log = _Debug_log;
-var $ghivert$elm_graphql$GraphQl$OperationQuery = {$: 'OperationQuery'};
-var $ghivert$elm_graphql$GraphQl$Request = F3(
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $author$project$Graphql$Parser$Type$EnumType = function (a) {
+	return {$: 'EnumType', a: a};
+};
+var $author$project$Graphql$Parser$Type$TypeDefinition = F3(
 	function (a, b, c) {
-		return {$: 'Request', a: a, b: b, c: c};
+		return {$: 'TypeDefinition', a: a, b: b, c: c};
 	});
-var $ghivert$elm_graphql$GraphQl$query = function (query_) {
-	return A3($ghivert$elm_graphql$GraphQl$Request, $ghivert$elm_graphql$GraphQl$OperationQuery, query_, $elm$core$Maybe$Nothing);
+var $author$project$Graphql$Parser$ClassCaseName$ClassCaseName = function (a) {
+	return {$: 'ClassCaseName', a: a};
 };
-var $elm$http$Http$jsonBody = function (value) {
+var $author$project$Graphql$Parser$ClassCaseName$build = $author$project$Graphql$Parser$ClassCaseName$ClassCaseName;
+var $author$project$Graphql$Parser$Type$typeDefinition = F3(
+	function (name, definableType, description) {
+		return A3(
+			$author$project$Graphql$Parser$Type$TypeDefinition,
+			$author$project$Graphql$Parser$ClassCaseName$build(name),
+			definableType,
+			description);
+	});
+var $author$project$Graphql$Parser$Type$createEnum = F3(
+	function (enumName, description, enumValues) {
+		return A3(
+			$author$project$Graphql$Parser$Type$typeDefinition,
+			enumName,
+			$author$project$Graphql$Parser$Type$EnumType(enumValues),
+			description);
+	});
+var $author$project$Graphql$Parser$Type$EnumValue = F2(
+	function (name, description) {
+		return {description: description, name: name};
+	});
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$maybe = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
+				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+			]));
+};
+var $author$project$Graphql$Parser$Type$enumValueDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Graphql$Parser$Type$EnumValue,
+	A2(
+		$elm$json$Json$Decode$map,
+		$author$project$Graphql$Parser$ClassCaseName$build,
+		A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string)),
+	A2(
+		$elm$json$Json$Decode$field,
+		'description',
+		$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string)));
+var $elm$json$Json$Decode$list = _Json_decodeList;
+var $elm$json$Json$Decode$map3 = _Json_map3;
+var $author$project$Graphql$Parser$Type$enumDecoder = A4(
+	$elm$json$Json$Decode$map3,
+	$author$project$Graphql$Parser$Type$createEnum,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	$elm$json$Json$Decode$maybe(
+		A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string)),
+	A2(
+		$elm$json$Json$Decode$field,
+		'enumValues',
+		$elm$json$Json$Decode$list($author$project$Graphql$Parser$Type$enumValueDecoder)));
+var $elm$json$Json$Decode$fail = _Json_fail;
+var $author$project$Graphql$Parser$Type$InputObjectType = function (a) {
+	return {$: 'InputObjectType', a: a};
+};
+var $author$project$Graphql$Parser$Type$createInputObject = F2(
+	function (inputObjectName, fields) {
+		return A3(
+			$author$project$Graphql$Parser$Type$typeDefinition,
+			inputObjectName,
+			$author$project$Graphql$Parser$Type$InputObjectType(fields),
+			$elm$core$Maybe$Nothing);
+	});
+var $author$project$Graphql$Parser$Type$RawField = F4(
+	function (name, description, ofType, args) {
+		return {args: args, description: description, name: name, ofType: ofType};
+	});
+var $elm$json$Json$Decode$map4 = _Json_map4;
+var $author$project$Graphql$Parser$Type$RawTypeRef = function (a) {
+	return {$: 'RawTypeRef', a: a};
+};
+var $author$project$Graphql$Parser$Type$createRawTypeRef = F3(
+	function (stringMaybe, typeKind, rawTypeRefMaybe) {
+		return $author$project$Graphql$Parser$Type$RawTypeRef(
+			{kind: typeKind, name: stringMaybe, ofType: rawTypeRefMaybe});
+	});
+var $author$project$Graphql$Parser$TypeKind$Enum = {$: 'Enum'};
+var $author$project$Graphql$Parser$TypeKind$InputObject = {$: 'InputObject'};
+var $author$project$Graphql$Parser$TypeKind$Interface = {$: 'Interface'};
+var $author$project$Graphql$Parser$TypeKind$List = {$: 'List'};
+var $author$project$Graphql$Parser$TypeKind$NonNull = {$: 'NonNull'};
+var $author$project$Graphql$Parser$TypeKind$Object = {$: 'Object'};
+var $author$project$Graphql$Parser$TypeKind$Scalar = {$: 'Scalar'};
+var $author$project$Graphql$Parser$TypeKind$Union = {$: 'Union'};
+var $author$project$Graphql$Parser$TypeKind$decoder = A2(
+	$elm$json$Json$Decode$andThen,
+	function (string) {
+		switch (string) {
+			case 'SCALAR':
+				return $elm$json$Json$Decode$succeed($author$project$Graphql$Parser$TypeKind$Scalar);
+			case 'OBJECT':
+				return $elm$json$Json$Decode$succeed($author$project$Graphql$Parser$TypeKind$Object);
+			case 'LIST':
+				return $elm$json$Json$Decode$succeed($author$project$Graphql$Parser$TypeKind$List);
+			case 'NON_NULL':
+				return $elm$json$Json$Decode$succeed($author$project$Graphql$Parser$TypeKind$NonNull);
+			case 'ENUM':
+				return $elm$json$Json$Decode$succeed($author$project$Graphql$Parser$TypeKind$Enum);
+			case 'INTERFACE':
+				return $elm$json$Json$Decode$succeed($author$project$Graphql$Parser$TypeKind$Interface);
+			case 'INPUT_OBJECT':
+				return $elm$json$Json$Decode$succeed($author$project$Graphql$Parser$TypeKind$InputObject);
+			case 'UNION':
+				return $elm$json$Json$Decode$succeed($author$project$Graphql$Parser$TypeKind$Union);
+			default:
+				return $elm$json$Json$Decode$fail('Invalid TypeKind' + string);
+		}
+	},
+	$elm$json$Json$Decode$string);
+var $elm$json$Json$Decode$lazy = function (thunk) {
 	return A2(
-		_Http_pair,
-		'application/json',
-		A2($elm$json$Json$Encode$encode, 0, value));
+		$elm$json$Json$Decode$andThen,
+		thunk,
+		$elm$json$Json$Decode$succeed(_Utils_Tuple0));
 };
-var $elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
-		}
-	});
-var $elm$core$List$concat = function (lists) {
-	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
-};
-var $ghivert$elm_graphql$GraphQl$Field$Field = function (a) {
-	return {$: 'Field', a: a};
-};
-var $ghivert$elm_graphql$Helpers$betweenBraces = function (string) {
-	return '{' + (string + '}');
-};
-var $ghivert$elm_graphql$Helpers$between = F2(
-	function (_char, string) {
-		return _Utils_ap(
-			_char,
-			_Utils_ap(string, _char));
-	});
-var $ghivert$elm_graphql$Helpers$betweenNewline = $ghivert$elm_graphql$Helpers$between('\n');
-var $ghivert$elm_graphql$Helpers$betweenParen = function (string) {
-	return '(' + (string + ')');
-};
-var $elm$core$List$isEmpty = function (xs) {
-	if (!xs.b) {
-		return true;
-	} else {
-		return false;
-	}
-};
-var $ghivert$elm_graphql$GraphQl$Field$joinGraphQlArgument = function (_v0) {
-	var param = _v0.a;
-	var value = _v0.b;
-	return param + (': ' + value);
-};
-var $ghivert$elm_graphql$GraphQl$Field$addArguments = function (_arguments) {
-	return $elm$core$List$isEmpty(_arguments) ? '' : $ghivert$elm_graphql$Helpers$betweenParen(
-		A2(
-			$elm$core$String$join,
-			', ',
-			A2($elm$core$List$map, $ghivert$elm_graphql$GraphQl$Field$joinGraphQlArgument, _arguments)));
-};
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
-var $ghivert$elm_graphql$Helpers$reverseAdd = F2(
-	function (first, second) {
-		return _Utils_ap(second, first);
-	});
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
-var $ghivert$elm_graphql$GraphQl$Field$addName = A2(
-	$elm$core$Basics$composeR,
-	$elm$core$Maybe$map(
-		$ghivert$elm_graphql$Helpers$reverseAdd(':')),
-	$elm$core$Maybe$withDefault(''));
-var $ghivert$elm_graphql$GraphQl$Field$encodeName = F2(
-	function (_v0, id) {
-		var value = _v0.a;
-		return A2(
-			$ghivert$elm_graphql$Helpers$reverseAdd,
-			$ghivert$elm_graphql$GraphQl$Field$addArguments(value._arguments),
-			_Utils_ap(
-				$ghivert$elm_graphql$GraphQl$Field$addName(value.alias),
-				id));
-	});
-var $ghivert$elm_graphql$GraphQl$Field$addSelectors = function (selectors) {
-	return $elm$core$List$isEmpty(selectors) ? '' : $ghivert$elm_graphql$Helpers$betweenBraces(
-		$ghivert$elm_graphql$Helpers$betweenNewline(
+function $author$project$Graphql$Parser$Type$cyclic$typeRefDecoder() {
+	return A4(
+		$elm$json$Json$Decode$map3,
+		$author$project$Graphql$Parser$Type$createRawTypeRef,
+		$elm$json$Json$Decode$maybe(
+			A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string)),
+		A2($elm$json$Json$Decode$field, 'kind', $author$project$Graphql$Parser$TypeKind$decoder),
+		$elm$json$Json$Decode$maybe(
 			A2(
-				$elm$core$String$join,
-				'\n',
-				A2($elm$core$List$map, $ghivert$elm_graphql$GraphQl$Field$encodeFieldHelp, selectors))));
+				$elm$json$Json$Decode$field,
+				'ofType',
+				$elm$json$Json$Decode$lazy(
+					function (_v0) {
+						return $author$project$Graphql$Parser$Type$cyclic$typeRefDecoder();
+					}))));
+}
+try {
+	var $author$project$Graphql$Parser$Type$typeRefDecoder = $author$project$Graphql$Parser$Type$cyclic$typeRefDecoder();
+	$author$project$Graphql$Parser$Type$cyclic$typeRefDecoder = function () {
+		return $author$project$Graphql$Parser$Type$typeRefDecoder;
+	};
+} catch ($) {
+	throw 'Some top-level definitions from `Graphql.Parser.Type` are causing infinite recursion:\n\n  ┌─────┐\n  │    typeRefDecoder\n  └─────┘\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!';}
+var $author$project$Graphql$Parser$Type$inputField = A5(
+	$elm$json$Json$Decode$map4,
+	$author$project$Graphql$Parser$Type$RawField,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'description',
+		$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string)),
+	A2($elm$json$Json$Decode$field, 'type', $author$project$Graphql$Parser$Type$typeRefDecoder),
+	$elm$json$Json$Decode$succeed(_List_Nil));
+var $author$project$Graphql$Parser$CamelCaseName$CamelCaseName = function (a) {
+	return {$: 'CamelCaseName', a: a};
 };
-var $ghivert$elm_graphql$GraphQl$Field$encodeFieldHelp = function (_v0) {
-	var value = _v0.a;
-	return A2(
-		$ghivert$elm_graphql$Helpers$reverseAdd,
-		$ghivert$elm_graphql$GraphQl$Field$addSelectors(value.selectors),
-		A2(
-			$elm$core$Maybe$withDefault,
-			'',
-			A2(
-				$elm$core$Maybe$map,
-				$ghivert$elm_graphql$GraphQl$Field$encodeName(
-					$ghivert$elm_graphql$GraphQl$Field$Field(value)),
-				value.id)));
-};
-var $ghivert$elm_graphql$GraphQl$Field$swapArgumentsAndVariables = function (_v0) {
-	var value = _v0.a;
-	return $ghivert$elm_graphql$GraphQl$Field$Field(
-		_Utils_update(
-			value,
-			{_arguments: value.variables}));
-};
-var $ghivert$elm_graphql$GraphQl$Field$unsetAlias = function (_v0) {
-	var value = _v0.a;
-	return $ghivert$elm_graphql$GraphQl$Field$Field(
-		_Utils_update(
-			value,
-			{alias: $elm$core$Maybe$Nothing}));
-};
-var $ghivert$elm_graphql$GraphQl$Field$encodeField = function (value) {
-	return $ghivert$elm_graphql$GraphQl$Field$encodeFieldHelp(
-		$ghivert$elm_graphql$GraphQl$Field$swapArgumentsAndVariables(
-			$ghivert$elm_graphql$GraphQl$Field$unsetAlias(value)));
-};
-var $ghivert$elm_graphql$GraphQl$operationToString = function (requestType) {
-	if (requestType.$ === 'OperationMutation') {
-		return 'mutation ';
-	} else {
-		return 'query ';
-	}
-};
-var $ghivert$elm_graphql$GraphQl$encodeOperation = F2(
-	function (requestType, _v0) {
-		var value = _v0.a;
-		return _Utils_ap(
-			$ghivert$elm_graphql$GraphQl$operationToString(requestType),
-			$ghivert$elm_graphql$GraphQl$Field$encodeField(value));
+var $author$project$Graphql$Parser$CamelCaseName$build = $author$project$Graphql$Parser$CamelCaseName$CamelCaseName;
+var $elm$core$Result$map2 = F3(
+	function (func, ra, rb) {
+		if (ra.$ === 'Err') {
+			var x = ra.a;
+			return $elm$core$Result$Err(x);
+		} else {
+			var a = ra.a;
+			if (rb.$ === 'Err') {
+				var x = rb.a;
+				return $elm$core$Result$Err(x);
+			} else {
+				var b = rb.a;
+				return $elm$core$Result$Ok(
+					A2(func, a, b));
+			}
+		}
 	});
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
+var $elm_community$result_extra$Result$Extra$combine = A2(
+	$elm$core$List$foldr,
+	$elm$core$Result$map2($elm$core$List$cons),
+	$elm$core$Result$Ok(_List_Nil));
+var $elm$core$Result$map = F2(
+	function (func, ra) {
+		if (ra.$ === 'Ok') {
+			var a = ra.a;
+			return $elm$core$Result$Ok(
+				func(a));
+		} else {
+			var e = ra.a;
+			return $elm$core$Result$Err(e);
+		}
+	});
 var $elm$core$Tuple$pair = F2(
 	function (a, b) {
 		return _Utils_Tuple2(a, b);
 	});
-var $elm$core$List$singleton = function (value) {
-	return _List_fromArray(
-		[value]);
+var $author$project$Graphql$Parser$Type$EnumRef = function (a) {
+	return {$: 'EnumRef', a: a};
 };
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $ghivert$elm_graphql$GraphQl$operationToJson = F3(
-	function (requestType, value, variables) {
-		return $elm$json$Json$Encode$object(
-			$elm$core$List$concat(
-				_List_fromArray(
-					[
-						_List_fromArray(
-						[
-							_Utils_Tuple2(
-							'query',
-							$elm$json$Json$Encode$string(
-								A2($ghivert$elm_graphql$GraphQl$encodeOperation, requestType, value)))
-						]),
-						A2(
-						$elm$core$Maybe$withDefault,
-						_List_Nil,
-						A2(
-							$elm$core$Maybe$map,
-							$elm$core$List$singleton,
-							A2(
-								$elm$core$Maybe$map,
-								$elm$core$Tuple$pair('variables'),
-								A2($elm$core$Maybe$map, $elm$json$Json$Encode$object, variables))))
-					])));
-	});
-var $ghivert$elm_graphql$GraphQl$toJson = function (_v0) {
-	var requestType = _v0.a;
-	var operation = _v0.b;
-	var variables = _v0.c;
-	return A3($ghivert$elm_graphql$GraphQl$operationToJson, requestType, operation, variables);
+var $author$project$Graphql$Parser$Type$InputObjectRef = function (a) {
+	return {$: 'InputObjectRef', a: a};
 };
-var $ghivert$elm_graphql$GraphQl$Http$send = F4(
-	function (_v0, msg, decoder, body) {
-		var url = _v0.url;
-		var headers = _v0.headers;
-		return $elm$http$Http$request(
-			{
-				body: $elm$http$Http$jsonBody(
-					$ghivert$elm_graphql$GraphQl$toJson(body)),
-				expect: A2(
-					$elm$http$Http$expectJson,
-					msg,
-					A2($elm$json$Json$Decode$field, 'data', decoder)),
-				headers: headers,
-				method: 'POST',
-				timeout: $elm$core$Maybe$Nothing,
-				tracker: $elm$core$Maybe$Nothing,
-				url: url
-			});
-	});
-var $ghivert$elm_graphql$GraphQl$Field$new = $ghivert$elm_graphql$GraphQl$Field$Field(
-	{alias: $elm$core$Maybe$Nothing, _arguments: _List_Nil, id: $elm$core$Maybe$Nothing, selectors: _List_Nil, variables: _List_Nil});
-var $ghivert$elm_graphql$GraphQl$Field$setId = F2(
-	function (id, _v0) {
-		var value = _v0.a;
-		return $ghivert$elm_graphql$GraphQl$Field$Field(
-			_Utils_update(
-				value,
-				{
-					id: $elm$core$Maybe$Just(id)
-				}));
-	});
-var $ghivert$elm_graphql$GraphQl$field = function (id) {
-	return A2($ghivert$elm_graphql$GraphQl$Field$setId, id, $ghivert$elm_graphql$GraphQl$Field$new);
+var $author$project$Graphql$Parser$Type$InterfaceRef = function (a) {
+	return {$: 'InterfaceRef', a: a};
 };
-var $ghivert$elm_graphql$GraphQl$Operation = function (a) {
-	return {$: 'Operation', a: a};
+var $author$project$Graphql$Parser$Type$List = function (a) {
+	return {$: 'List', a: a};
 };
-var $ghivert$elm_graphql$GraphQl$Field$addSelectorsIn = F2(
-	function (_v0, selectors) {
-		var value = _v0.a;
-		return $ghivert$elm_graphql$GraphQl$Field$Field(
-			_Utils_update(
-				value,
-				{
-					selectors: A2($elm$core$List$append, selectors, value.selectors)
-				}));
+var $author$project$Graphql$Parser$Type$NonNullable = {$: 'NonNullable'};
+var $author$project$Graphql$Parser$Type$Nullable = {$: 'Nullable'};
+var $author$project$Graphql$Parser$Type$ObjectRef = function (a) {
+	return {$: 'ObjectRef', a: a};
+};
+var $author$project$Graphql$Parser$Type$Scalar = function (a) {
+	return {$: 'Scalar', a: a};
+};
+var $author$project$Graphql$Parser$Type$TypeReference = F2(
+	function (a, b) {
+		return {$: 'TypeReference', a: a, b: b};
 	});
-var $ghivert$elm_graphql$GraphQl$object = A2(
-	$elm$core$Basics$composeR,
-	$ghivert$elm_graphql$GraphQl$Field$addSelectorsIn($ghivert$elm_graphql$GraphQl$Field$new),
-	$ghivert$elm_graphql$GraphQl$Operation);
-var $ghivert$elm_graphql$GraphQl$withSelectors = F2(
-	function (selectors, value) {
-		return A2($ghivert$elm_graphql$GraphQl$Field$addSelectorsIn, value, selectors);
-	});
-var $author$project$Main$typesRequest = $ghivert$elm_graphql$GraphQl$object(
-	_List_fromArray(
-		[
-			A2(
-			$ghivert$elm_graphql$GraphQl$withSelectors,
-			_List_fromArray(
-				[
+var $author$project$Graphql$Parser$Type$UnionRef = function (a) {
+	return {$: 'UnionRef', a: a};
+};
+var $author$project$Graphql$Parser$Type$expectPresent = function (maybeString) {
+	if (maybeString.$ === 'Just') {
+		var string = maybeString.a;
+		return $elm$core$Result$Ok(string);
+	} else {
+		return $elm$core$Result$Err('Expected string but got Nothing');
+	}
+};
+var $author$project$Graphql$Parser$Scalar$String = {$: 'String'};
+var $author$project$Graphql$Parser$Type$ignoreRef = A2(
+	$author$project$Graphql$Parser$Type$TypeReference,
+	$author$project$Graphql$Parser$Type$Scalar($author$project$Graphql$Parser$Scalar$String),
+	$author$project$Graphql$Parser$Type$Nullable);
+var $author$project$Graphql$Parser$Scalar$Boolean = {$: 'Boolean'};
+var $author$project$Graphql$Parser$Scalar$Custom = function (a) {
+	return {$: 'Custom', a: a};
+};
+var $author$project$Graphql$Parser$Scalar$Float = {$: 'Float'};
+var $author$project$Graphql$Parser$Scalar$Int = {$: 'Int'};
+var $author$project$Graphql$Parser$Scalar$parse = function (scalarName) {
+	switch (scalarName) {
+		case 'String':
+			return $author$project$Graphql$Parser$Scalar$String;
+		case 'Boolean':
+			return $author$project$Graphql$Parser$Scalar$Boolean;
+		case 'Int':
+			return $author$project$Graphql$Parser$Scalar$Int;
+		case 'Float':
+			return $author$project$Graphql$Parser$Scalar$Float;
+		default:
+			return $author$project$Graphql$Parser$Scalar$Custom(
+				$author$project$Graphql$Parser$ClassCaseName$build(scalarName));
+	}
+};
+var $author$project$Graphql$Parser$Type$parseRef = function (_v0) {
+	var rawTypeRef = _v0.a;
+	var _v1 = rawTypeRef.kind;
+	switch (_v1.$) {
+		case 'List':
+			var _v2 = rawTypeRef.ofType;
+			if (_v2.$ === 'Just') {
+				var nestedOfType = _v2.a;
+				return A2(
+					$elm$core$Result$map,
+					function (listRef) {
+						return A2(
+							$author$project$Graphql$Parser$Type$TypeReference,
+							$author$project$Graphql$Parser$Type$List(listRef),
+							$author$project$Graphql$Parser$Type$Nullable);
+					},
+					$author$project$Graphql$Parser$Type$parseRef(nestedOfType));
+			} else {
+				return $elm$core$Result$Err('Missing nested type for List reference');
+			}
+		case 'Scalar':
+			var _v3 = rawTypeRef.name;
+			if (_v3.$ === 'Just') {
+				var scalarName = _v3.a;
+				return $elm$core$Result$Ok(
 					A2(
-					$ghivert$elm_graphql$GraphQl$withSelectors,
-					_List_fromArray(
-						[
-							$ghivert$elm_graphql$GraphQl$field('name')
-						]),
-					$ghivert$elm_graphql$GraphQl$field('types'))
-				]),
-			$ghivert$elm_graphql$GraphQl$field('__schema'))
-		]));
-var $author$project$Main$sendRequest = function (url) {
-	return A4(
-		$ghivert$elm_graphql$GraphQl$Http$send,
-		{headers: _List_Nil, url: url},
-		function (result) {
-			var _v0 = A2($elm$core$Debug$log, 'result', result);
-			return $author$project$Main$NoOp;
-		},
-		$elm$json$Json$Decode$succeed('42'),
-		$ghivert$elm_graphql$GraphQl$query($author$project$Main$typesRequest));
+						$author$project$Graphql$Parser$Type$TypeReference,
+						$author$project$Graphql$Parser$Type$Scalar(
+							$author$project$Graphql$Parser$Scalar$parse(scalarName)),
+						$author$project$Graphql$Parser$Type$Nullable));
+			} else {
+				return $elm$core$Result$Err('Should not get null names for scalar references');
+			}
+		case 'Interface':
+			var _v4 = rawTypeRef.name;
+			if (_v4.$ === 'Just') {
+				var interfaceName = _v4.a;
+				return $elm$core$Result$Ok(
+					A2(
+						$author$project$Graphql$Parser$Type$TypeReference,
+						$author$project$Graphql$Parser$Type$InterfaceRef(interfaceName),
+						$author$project$Graphql$Parser$Type$Nullable));
+			} else {
+				return $elm$core$Result$Err('Should not get null names for interface references');
+			}
+		case 'Object':
+			var _v5 = rawTypeRef.name;
+			if (_v5.$ === 'Just') {
+				var objectName = _v5.a;
+				return $elm$core$Result$Ok(
+					A2(
+						$author$project$Graphql$Parser$Type$TypeReference,
+						$author$project$Graphql$Parser$Type$ObjectRef(objectName),
+						$author$project$Graphql$Parser$Type$Nullable));
+			} else {
+				return $elm$core$Result$Err('Should not get null names for object references');
+			}
+		case 'NonNull':
+			var _v6 = rawTypeRef.ofType;
+			if (_v6.$ === 'Just') {
+				var actualOfType = _v6.a.a;
+				var _v7 = _Utils_Tuple2(actualOfType.kind, actualOfType.name);
+				switch (_v7.a.$) {
+					case 'Scalar':
+						var _v8 = _v7.a;
+						var scalarName = _v7.b;
+						return A2(
+							$elm$core$Result$map,
+							function (presentScalarName) {
+								return A2(
+									$author$project$Graphql$Parser$Type$TypeReference,
+									$author$project$Graphql$Parser$Type$Scalar(
+										$author$project$Graphql$Parser$Scalar$parse(presentScalarName)),
+									$author$project$Graphql$Parser$Type$NonNullable);
+							},
+							$author$project$Graphql$Parser$Type$expectPresent(scalarName));
+					case 'Object':
+						var _v9 = _v7.a;
+						var objectName = _v7.b;
+						return A2(
+							$elm$core$Result$map,
+							function (presentObjectName) {
+								return A2(
+									$author$project$Graphql$Parser$Type$TypeReference,
+									$author$project$Graphql$Parser$Type$ObjectRef(presentObjectName),
+									$author$project$Graphql$Parser$Type$NonNullable);
+							},
+							$author$project$Graphql$Parser$Type$expectPresent(objectName));
+					case 'Interface':
+						var _v10 = _v7.a;
+						var interfaceName = _v7.b;
+						return A2(
+							$elm$core$Result$map,
+							function (presentName) {
+								return A2(
+									$author$project$Graphql$Parser$Type$TypeReference,
+									$author$project$Graphql$Parser$Type$InterfaceRef(presentName),
+									$author$project$Graphql$Parser$Type$NonNullable);
+							},
+							$author$project$Graphql$Parser$Type$expectPresent(interfaceName));
+					case 'List':
+						var _v11 = _v7.a;
+						var _v12 = actualOfType.ofType;
+						if (_v12.$ === 'Just') {
+							var nestedOfType = _v12.a;
+							return A2(
+								$elm$core$Result$map,
+								function (listRef) {
+									return A2(
+										$author$project$Graphql$Parser$Type$TypeReference,
+										$author$project$Graphql$Parser$Type$List(listRef),
+										$author$project$Graphql$Parser$Type$NonNullable);
+								},
+								$author$project$Graphql$Parser$Type$parseRef(nestedOfType));
+						} else {
+							return $elm$core$Result$Err('');
+						}
+					case 'NonNull':
+						var _v13 = _v7.a;
+						return $elm$core$Result$Err('Can\'t have nested non-null types');
+					case 'Ignore':
+						var _v14 = _v7.a;
+						return $elm$core$Result$Ok($author$project$Graphql$Parser$Type$ignoreRef);
+					case 'Enum':
+						var _v15 = _v7.a;
+						var enumName = _v7.b;
+						return A2(
+							$elm$core$Result$map,
+							function (presentName) {
+								return A2(
+									$author$project$Graphql$Parser$Type$TypeReference,
+									$author$project$Graphql$Parser$Type$EnumRef(
+										$author$project$Graphql$Parser$ClassCaseName$build(presentName)),
+									$author$project$Graphql$Parser$Type$NonNullable);
+							},
+							$author$project$Graphql$Parser$Type$expectPresent(enumName));
+					case 'InputObject':
+						var _v16 = _v7.a;
+						var inputObjectName = _v7.b;
+						return A2(
+							$elm$core$Result$map,
+							function (presentName) {
+								return A2(
+									$author$project$Graphql$Parser$Type$TypeReference,
+									$author$project$Graphql$Parser$Type$InputObjectRef(
+										$author$project$Graphql$Parser$ClassCaseName$build(presentName)),
+									$author$project$Graphql$Parser$Type$NonNullable);
+							},
+							$author$project$Graphql$Parser$Type$expectPresent(inputObjectName));
+					default:
+						var _v17 = _v7.a;
+						return A2(
+							$elm$core$Result$map,
+							function (presentName) {
+								return A2(
+									$author$project$Graphql$Parser$Type$TypeReference,
+									$author$project$Graphql$Parser$Type$UnionRef(presentName),
+									$author$project$Graphql$Parser$Type$NonNullable);
+							},
+							$author$project$Graphql$Parser$Type$expectPresent(actualOfType.name));
+				}
+			} else {
+				return $elm$core$Result$Ok($author$project$Graphql$Parser$Type$ignoreRef);
+			}
+		case 'Ignore':
+			return $elm$core$Result$Ok($author$project$Graphql$Parser$Type$ignoreRef);
+		case 'Enum':
+			var _v18 = rawTypeRef.name;
+			if (_v18.$ === 'Just') {
+				var objectName = _v18.a;
+				return $elm$core$Result$Ok(
+					A2(
+						$author$project$Graphql$Parser$Type$TypeReference,
+						$author$project$Graphql$Parser$Type$EnumRef(
+							$author$project$Graphql$Parser$ClassCaseName$build(objectName)),
+						$author$project$Graphql$Parser$Type$Nullable));
+			} else {
+				return $elm$core$Result$Err('Should not get null names for enum references');
+			}
+		case 'InputObject':
+			var _v19 = rawTypeRef.name;
+			if (_v19.$ === 'Just') {
+				var inputObjectName = _v19.a;
+				return $elm$core$Result$Ok(
+					A2(
+						$author$project$Graphql$Parser$Type$TypeReference,
+						$author$project$Graphql$Parser$Type$InputObjectRef(
+							$author$project$Graphql$Parser$ClassCaseName$build(inputObjectName)),
+						$author$project$Graphql$Parser$Type$Nullable));
+			} else {
+				return $elm$core$Result$Err('Should not get null names for input object references');
+			}
+		default:
+			return A2(
+				$elm$core$Result$map,
+				function (typeRefName) {
+					return A2(
+						$author$project$Graphql$Parser$Type$TypeReference,
+						$author$project$Graphql$Parser$Type$UnionRef(typeRefName),
+						$author$project$Graphql$Parser$Type$Nullable);
+				},
+				$author$project$Graphql$Parser$Type$expectPresent(rawTypeRef.name));
+	}
+};
+var $author$project$Graphql$Parser$Type$parseField = function (_v0) {
+	var name = _v0.name;
+	var ofType = _v0.ofType;
+	var args = _v0.args;
+	var description = _v0.description;
+	var argRefs = $elm_community$result_extra$Result$Extra$combine(
+		A2(
+			$elm$core$List$map,
+			function (arg) {
+				return A2(
+					$elm$core$Result$map,
+					function (argType) {
+						return {
+							description: arg.description,
+							name: $author$project$Graphql$Parser$CamelCaseName$build(arg.name),
+							typeRef: argType
+						};
+					},
+					$author$project$Graphql$Parser$Type$parseRef(arg.ofType));
+			},
+			args));
+	var _v1 = A3(
+		$elm$core$Result$map2,
+		$elm$core$Tuple$pair,
+		$author$project$Graphql$Parser$Type$parseRef(ofType),
+		argRefs);
+	if (_v1.$ === 'Ok') {
+		var _v2 = _v1.a;
+		var ofTypeRef = _v2.a;
+		var okArgRefs = _v2.b;
+		return $elm$json$Json$Decode$succeed(
+			{
+				args: okArgRefs,
+				description: description,
+				name: $author$project$Graphql$Parser$CamelCaseName$build(name),
+				typeRef: ofTypeRef
+			});
+	} else {
+		var error = _v1.a;
+		return $elm$json$Json$Decode$fail(error);
+	}
+};
+var $author$project$Graphql$Parser$Type$inputObjectDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Graphql$Parser$Type$createInputObject,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'inputFields',
+		$elm$json$Json$Decode$list(
+			A2($elm$json$Json$Decode$andThen, $author$project$Graphql$Parser$Type$parseField, $author$project$Graphql$Parser$Type$inputField))));
+var $author$project$Graphql$Parser$Type$InterfaceType = F2(
+	function (a, b) {
+		return {$: 'InterfaceType', a: a, b: b};
+	});
+var $author$project$Graphql$Parser$Type$createInterface = F3(
+	function (interfaceName, fields, possibleTypes) {
+		return A3(
+			$author$project$Graphql$Parser$Type$typeDefinition,
+			interfaceName,
+			A2(
+				$author$project$Graphql$Parser$Type$InterfaceType,
+				fields,
+				A2($elm$core$List$map, $author$project$Graphql$Parser$ClassCaseName$build, possibleTypes)),
+			$elm$core$Maybe$Nothing);
+	});
+var $author$project$Graphql$Parser$Type$RawArg = F3(
+	function (name, description, ofType) {
+		return {description: description, name: name, ofType: ofType};
+	});
+var $author$project$Graphql$Parser$Type$argDecoder = A4(
+	$elm$json$Json$Decode$map3,
+	$author$project$Graphql$Parser$Type$RawArg,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'description',
+		$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string)),
+	A2($elm$json$Json$Decode$field, 'type', $author$project$Graphql$Parser$Type$typeRefDecoder));
+var $author$project$Graphql$Parser$Type$fieldDecoder = A5(
+	$elm$json$Json$Decode$map4,
+	$author$project$Graphql$Parser$Type$RawField,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'description',
+		$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string)),
+	A2($elm$json$Json$Decode$field, 'type', $author$project$Graphql$Parser$Type$typeRefDecoder),
+	A2(
+		$elm$json$Json$Decode$field,
+		'args',
+		$elm$json$Json$Decode$list($author$project$Graphql$Parser$Type$argDecoder)));
+var $author$project$Graphql$Parser$Type$interfaceDecoder = A4(
+	$elm$json$Json$Decode$map3,
+	$author$project$Graphql$Parser$Type$createInterface,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'fields',
+		$elm$json$Json$Decode$list(
+			A2($elm$json$Json$Decode$andThen, $author$project$Graphql$Parser$Type$parseField, $author$project$Graphql$Parser$Type$fieldDecoder))),
+	A2(
+		$elm$json$Json$Decode$field,
+		'possibleTypes',
+		$elm$json$Json$Decode$list(
+			A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string))));
+var $author$project$Graphql$Parser$Type$ObjectType = function (a) {
+	return {$: 'ObjectType', a: a};
+};
+var $author$project$Graphql$Parser$Type$createObject = F2(
+	function (objectName, fields) {
+		return A3(
+			$author$project$Graphql$Parser$Type$typeDefinition,
+			objectName,
+			$author$project$Graphql$Parser$Type$ObjectType(fields),
+			$elm$core$Maybe$Nothing);
+	});
+var $author$project$Graphql$Parser$Type$objectDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Graphql$Parser$Type$createObject,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'fields',
+		$elm$json$Json$Decode$list(
+			A2($elm$json$Json$Decode$andThen, $author$project$Graphql$Parser$Type$parseField, $author$project$Graphql$Parser$Type$fieldDecoder))));
+var $author$project$Graphql$Parser$Type$ScalarType = {$: 'ScalarType'};
+var $author$project$Graphql$Parser$Type$scalarDecoder = A2(
+	$elm$json$Json$Decode$map,
+	function (scalarName) {
+		return A3($author$project$Graphql$Parser$Type$typeDefinition, scalarName, $author$project$Graphql$Parser$Type$ScalarType, $elm$core$Maybe$Nothing);
+	},
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string));
+var $author$project$Graphql$Parser$Type$UnionType = function (a) {
+	return {$: 'UnionType', a: a};
+};
+var $author$project$Graphql$Parser$Type$createUnion = F2(
+	function (interfaceName, possibleTypes) {
+		return A3(
+			$author$project$Graphql$Parser$Type$typeDefinition,
+			interfaceName,
+			$author$project$Graphql$Parser$Type$UnionType(
+				A2($elm$core$List$map, $author$project$Graphql$Parser$ClassCaseName$build, possibleTypes)),
+			$elm$core$Maybe$Nothing);
+	});
+var $author$project$Graphql$Parser$Type$unionDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Graphql$Parser$Type$createUnion,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	A2(
+		$elm$json$Json$Decode$field,
+		'possibleTypes',
+		$elm$json$Json$Decode$list(
+			A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string))));
+var $author$project$Graphql$Parser$Type$decodeKind = function (kind) {
+	switch (kind) {
+		case 'OBJECT':
+			return $author$project$Graphql$Parser$Type$objectDecoder;
+		case 'ENUM':
+			return $author$project$Graphql$Parser$Type$enumDecoder;
+		case 'SCALAR':
+			return $author$project$Graphql$Parser$Type$scalarDecoder;
+		case 'INTERFACE':
+			return $author$project$Graphql$Parser$Type$interfaceDecoder;
+		case 'UNION':
+			return $author$project$Graphql$Parser$Type$unionDecoder;
+		case 'INPUT_OBJECT':
+			return $author$project$Graphql$Parser$Type$inputObjectDecoder;
+		default:
+			return $elm$json$Json$Decode$fail('Unexpected kind ' + kind);
+	}
+};
+var $author$project$Graphql$Parser$Type$decoder = A2(
+	$elm$json$Json$Decode$andThen,
+	$author$project$Graphql$Parser$Type$decodeKind,
+	A2($elm$json$Json$Decode$field, 'kind', $elm$json$Json$Decode$string));
+var $author$project$Graphql$Parser$decoder = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['__schema', 'types']),
+	$elm$json$Json$Decode$list($author$project$Graphql$Parser$Type$decoder));
+var $author$project$Main$introspectionQuery = '\n{"query":"query IntrospectionQuery {    __schema {      queryType {        name      }      mutationType {        name      }      subscriptionType {        name      }      types {        ...FullType      }    }  }  fragment FullType on __Type {    kind    name    description    fields(includeDeprecated: false) {      name      description      args {        ...InputValue      }      type {        ...TypeRef      }      isDeprecated      deprecationReason    }    inputFields {      ...InputValue    }    interfaces {      ...TypeRef    }    enumValues(includeDeprecated: false) {      name      description      isDeprecated      deprecationReason    }    possibleTypes {      ...TypeRef    }  }  fragment InputValue on __InputValue {    name    description    type { ...TypeRef }    defaultValue  }  fragment TypeRef on __Type {    kind    name    ofType {      kind      name      ofType {        kind        name        ofType {          kind          name          ofType {            kind            name            ofType {              kind              name              ofType {                kind                name                ofType {                  kind                  name                }              }            }          }        }      }    }  }","variables":null,"operationName":"IntrospectionQuery"}\n';
+var $elm$core$Debug$log = _Debug_log;
+var $elm$http$Http$post = function (r) {
+	return $elm$http$Http$request(
+		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
+};
+var $elm$http$Http$stringBody = _Http_pair;
+var $author$project$Main$runIntrospectionQuery = function (url) {
+	return $elm$http$Http$post(
+		{
+			body: A2($elm$http$Http$stringBody, 'application/json', $author$project$Main$introspectionQuery),
+			expect: A2(
+				$elm$http$Http$expectJson,
+				function (result) {
+					var _v0 = A2($elm$core$Debug$log, 'result', result);
+					return $author$project$Main$NoOp;
+				},
+				A2($elm$json$Json$Decode$field, 'data', $author$project$Graphql$Parser$decoder)),
+			url: url
+		});
 };
 var $elm$core$Result$toMaybe = function (result) {
 	if (result.$ === 'Ok') {
@@ -6458,7 +6840,7 @@ var $author$project$Main$update = F2(
 					var config = _v1.a;
 					return _Utils_Tuple2(
 						model,
-						$author$project$Main$sendRequest(config.graphqlEndpoint));
+						$author$project$Main$runIntrospectionQuery(config.graphqlEndpoint));
 				}
 		}
 	});

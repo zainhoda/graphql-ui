@@ -8,6 +8,7 @@ import Http
 import Json.Decode
 import GraphQl
 import GraphQl.Http
+import Graphql.Parser as Parser
 
 -- TYPES
 type alias ConfigURL = String
@@ -68,7 +69,7 @@ update msg model =
           (model, Cmd.none)
         
         Just config ->
-          (model, sendRequest config.graphqlEndpoint)
+          (model, runIntrospectionQuery config.graphqlEndpoint)
 
 
 -- VIEW
@@ -112,7 +113,11 @@ typesRequest =
       |> GraphQl.withSelectors
         [ GraphQl.field "types"
           |> GraphQl.withSelectors
-            [ GraphQl.field "name"              
+            [ GraphQl.field "name"
+            , GraphQl.field "fields"
+              |> GraphQl.withSelectors
+                [ GraphQl.field "name"
+                ]          
             ]
         ]
     ]
@@ -122,3 +127,18 @@ sendRequest url =
     |> GraphQl.Http.send { url = url, headers = [] } 
       (\result -> let _ = Debug.log "result" result in NoOp)
       (Json.Decode.succeed "42")
+
+runIntrospectionQuery url =
+  Http.post 
+    { url = url
+    , body = Http.stringBody "application/json" introspectionQuery 
+    , expect = Http.expectJson (\result -> let _ = Debug.log "result" result in NoOp) (Json.Decode.field "data" Parser.decoder)
+    }
+
+
+-- CONSTS
+
+introspectionQuery : String
+introspectionQuery = """
+{"query":"query IntrospectionQuery {    __schema {      queryType {        name      }      mutationType {        name      }      subscriptionType {        name      }      types {        ...FullType      }    }  }  fragment FullType on __Type {    kind    name    description    fields(includeDeprecated: false) {      name      description      args {        ...InputValue      }      type {        ...TypeRef      }      isDeprecated      deprecationReason    }    inputFields {      ...InputValue    }    interfaces {      ...TypeRef    }    enumValues(includeDeprecated: false) {      name      description      isDeprecated      deprecationReason    }    possibleTypes {      ...TypeRef    }  }  fragment InputValue on __InputValue {    name    description    type { ...TypeRef }    defaultValue  }  fragment TypeRef on __Type {    kind    name    ofType {      kind      name      ofType {        kind        name        ofType {          kind          name          ofType {            kind            name            ofType {              kind              name              ofType {                kind                name                ofType {                  kind                  name                }              }            }          }        }      }    }  }","variables":null,"operationName":"IntrospectionQuery"}
+"""
