@@ -11,8 +11,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 # TODO
 
 ## Startup
-- [ ] Specify a GraphQL endpoint in a JSON config
-- [ ] Read the JSON config into Elm
+- [x] Specify a GraphQL endpoint in a JSON config
+- [x] Read the JSON config into Elm
 - [ ] Use introspection to get information on types, queries, and mutations
 
 ## Initial Models
