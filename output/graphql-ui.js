@@ -6137,6 +6137,297 @@ var $author$project$Main$subscriptions = function (_v0) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Main$NoOp = {$: 'NoOp'};
+var $elm$core$Debug$log = _Debug_log;
+var $ghivert$elm_graphql$GraphQl$OperationQuery = {$: 'OperationQuery'};
+var $ghivert$elm_graphql$GraphQl$Request = F3(
+	function (a, b, c) {
+		return {$: 'Request', a: a, b: b, c: c};
+	});
+var $ghivert$elm_graphql$GraphQl$query = function (query_) {
+	return A3($ghivert$elm_graphql$GraphQl$Request, $ghivert$elm_graphql$GraphQl$OperationQuery, query_, $elm$core$Maybe$Nothing);
+};
+var $elm$http$Http$jsonBody = function (value) {
+	return A2(
+		_Http_pair,
+		'application/json',
+		A2($elm$json$Json$Encode$encode, 0, value));
+};
+var $elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+		}
+	});
+var $elm$core$List$concat = function (lists) {
+	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
+};
+var $ghivert$elm_graphql$GraphQl$Field$Field = function (a) {
+	return {$: 'Field', a: a};
+};
+var $ghivert$elm_graphql$Helpers$betweenBraces = function (string) {
+	return '{' + (string + '}');
+};
+var $ghivert$elm_graphql$Helpers$between = F2(
+	function (_char, string) {
+		return _Utils_ap(
+			_char,
+			_Utils_ap(string, _char));
+	});
+var $ghivert$elm_graphql$Helpers$betweenNewline = $ghivert$elm_graphql$Helpers$between('\n');
+var $ghivert$elm_graphql$Helpers$betweenParen = function (string) {
+	return '(' + (string + ')');
+};
+var $elm$core$List$isEmpty = function (xs) {
+	if (!xs.b) {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $ghivert$elm_graphql$GraphQl$Field$joinGraphQlArgument = function (_v0) {
+	var param = _v0.a;
+	var value = _v0.b;
+	return param + (': ' + value);
+};
+var $ghivert$elm_graphql$GraphQl$Field$addArguments = function (_arguments) {
+	return $elm$core$List$isEmpty(_arguments) ? '' : $ghivert$elm_graphql$Helpers$betweenParen(
+		A2(
+			$elm$core$String$join,
+			', ',
+			A2($elm$core$List$map, $ghivert$elm_graphql$GraphQl$Field$joinGraphQlArgument, _arguments)));
+};
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $ghivert$elm_graphql$Helpers$reverseAdd = F2(
+	function (first, second) {
+		return _Utils_ap(second, first);
+	});
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $ghivert$elm_graphql$GraphQl$Field$addName = A2(
+	$elm$core$Basics$composeR,
+	$elm$core$Maybe$map(
+		$ghivert$elm_graphql$Helpers$reverseAdd(':')),
+	$elm$core$Maybe$withDefault(''));
+var $ghivert$elm_graphql$GraphQl$Field$encodeName = F2(
+	function (_v0, id) {
+		var value = _v0.a;
+		return A2(
+			$ghivert$elm_graphql$Helpers$reverseAdd,
+			$ghivert$elm_graphql$GraphQl$Field$addArguments(value._arguments),
+			_Utils_ap(
+				$ghivert$elm_graphql$GraphQl$Field$addName(value.alias),
+				id));
+	});
+var $ghivert$elm_graphql$GraphQl$Field$addSelectors = function (selectors) {
+	return $elm$core$List$isEmpty(selectors) ? '' : $ghivert$elm_graphql$Helpers$betweenBraces(
+		$ghivert$elm_graphql$Helpers$betweenNewline(
+			A2(
+				$elm$core$String$join,
+				'\n',
+				A2($elm$core$List$map, $ghivert$elm_graphql$GraphQl$Field$encodeFieldHelp, selectors))));
+};
+var $ghivert$elm_graphql$GraphQl$Field$encodeFieldHelp = function (_v0) {
+	var value = _v0.a;
+	return A2(
+		$ghivert$elm_graphql$Helpers$reverseAdd,
+		$ghivert$elm_graphql$GraphQl$Field$addSelectors(value.selectors),
+		A2(
+			$elm$core$Maybe$withDefault,
+			'',
+			A2(
+				$elm$core$Maybe$map,
+				$ghivert$elm_graphql$GraphQl$Field$encodeName(
+					$ghivert$elm_graphql$GraphQl$Field$Field(value)),
+				value.id)));
+};
+var $ghivert$elm_graphql$GraphQl$Field$swapArgumentsAndVariables = function (_v0) {
+	var value = _v0.a;
+	return $ghivert$elm_graphql$GraphQl$Field$Field(
+		_Utils_update(
+			value,
+			{_arguments: value.variables}));
+};
+var $ghivert$elm_graphql$GraphQl$Field$unsetAlias = function (_v0) {
+	var value = _v0.a;
+	return $ghivert$elm_graphql$GraphQl$Field$Field(
+		_Utils_update(
+			value,
+			{alias: $elm$core$Maybe$Nothing}));
+};
+var $ghivert$elm_graphql$GraphQl$Field$encodeField = function (value) {
+	return $ghivert$elm_graphql$GraphQl$Field$encodeFieldHelp(
+		$ghivert$elm_graphql$GraphQl$Field$swapArgumentsAndVariables(
+			$ghivert$elm_graphql$GraphQl$Field$unsetAlias(value)));
+};
+var $ghivert$elm_graphql$GraphQl$operationToString = function (requestType) {
+	if (requestType.$ === 'OperationMutation') {
+		return 'mutation ';
+	} else {
+		return 'query ';
+	}
+};
+var $ghivert$elm_graphql$GraphQl$encodeOperation = F2(
+	function (requestType, _v0) {
+		var value = _v0.a;
+		return _Utils_ap(
+			$ghivert$elm_graphql$GraphQl$operationToString(requestType),
+			$ghivert$elm_graphql$GraphQl$Field$encodeField(value));
+	});
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var $elm$core$List$singleton = function (value) {
+	return _List_fromArray(
+		[value]);
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $ghivert$elm_graphql$GraphQl$operationToJson = F3(
+	function (requestType, value, variables) {
+		return $elm$json$Json$Encode$object(
+			$elm$core$List$concat(
+				_List_fromArray(
+					[
+						_List_fromArray(
+						[
+							_Utils_Tuple2(
+							'query',
+							$elm$json$Json$Encode$string(
+								A2($ghivert$elm_graphql$GraphQl$encodeOperation, requestType, value)))
+						]),
+						A2(
+						$elm$core$Maybe$withDefault,
+						_List_Nil,
+						A2(
+							$elm$core$Maybe$map,
+							$elm$core$List$singleton,
+							A2(
+								$elm$core$Maybe$map,
+								$elm$core$Tuple$pair('variables'),
+								A2($elm$core$Maybe$map, $elm$json$Json$Encode$object, variables))))
+					])));
+	});
+var $ghivert$elm_graphql$GraphQl$toJson = function (_v0) {
+	var requestType = _v0.a;
+	var operation = _v0.b;
+	var variables = _v0.c;
+	return A3($ghivert$elm_graphql$GraphQl$operationToJson, requestType, operation, variables);
+};
+var $ghivert$elm_graphql$GraphQl$Http$send = F4(
+	function (_v0, msg, decoder, body) {
+		var url = _v0.url;
+		var headers = _v0.headers;
+		return $elm$http$Http$request(
+			{
+				body: $elm$http$Http$jsonBody(
+					$ghivert$elm_graphql$GraphQl$toJson(body)),
+				expect: A2(
+					$elm$http$Http$expectJson,
+					msg,
+					A2($elm$json$Json$Decode$field, 'data', decoder)),
+				headers: headers,
+				method: 'POST',
+				timeout: $elm$core$Maybe$Nothing,
+				tracker: $elm$core$Maybe$Nothing,
+				url: url
+			});
+	});
+var $ghivert$elm_graphql$GraphQl$Field$new = $ghivert$elm_graphql$GraphQl$Field$Field(
+	{alias: $elm$core$Maybe$Nothing, _arguments: _List_Nil, id: $elm$core$Maybe$Nothing, selectors: _List_Nil, variables: _List_Nil});
+var $ghivert$elm_graphql$GraphQl$Field$setId = F2(
+	function (id, _v0) {
+		var value = _v0.a;
+		return $ghivert$elm_graphql$GraphQl$Field$Field(
+			_Utils_update(
+				value,
+				{
+					id: $elm$core$Maybe$Just(id)
+				}));
+	});
+var $ghivert$elm_graphql$GraphQl$field = function (id) {
+	return A2($ghivert$elm_graphql$GraphQl$Field$setId, id, $ghivert$elm_graphql$GraphQl$Field$new);
+};
+var $ghivert$elm_graphql$GraphQl$Operation = function (a) {
+	return {$: 'Operation', a: a};
+};
+var $ghivert$elm_graphql$GraphQl$Field$addSelectorsIn = F2(
+	function (_v0, selectors) {
+		var value = _v0.a;
+		return $ghivert$elm_graphql$GraphQl$Field$Field(
+			_Utils_update(
+				value,
+				{
+					selectors: A2($elm$core$List$append, selectors, value.selectors)
+				}));
+	});
+var $ghivert$elm_graphql$GraphQl$object = A2(
+	$elm$core$Basics$composeR,
+	$ghivert$elm_graphql$GraphQl$Field$addSelectorsIn($ghivert$elm_graphql$GraphQl$Field$new),
+	$ghivert$elm_graphql$GraphQl$Operation);
+var $ghivert$elm_graphql$GraphQl$withSelectors = F2(
+	function (selectors, value) {
+		return A2($ghivert$elm_graphql$GraphQl$Field$addSelectorsIn, value, selectors);
+	});
+var $author$project$Main$typesRequest = $ghivert$elm_graphql$GraphQl$object(
+	_List_fromArray(
+		[
+			A2(
+			$ghivert$elm_graphql$GraphQl$withSelectors,
+			_List_fromArray(
+				[
+					A2(
+					$ghivert$elm_graphql$GraphQl$withSelectors,
+					_List_fromArray(
+						[
+							$ghivert$elm_graphql$GraphQl$field('name')
+						]),
+					$ghivert$elm_graphql$GraphQl$field('types'))
+				]),
+			$ghivert$elm_graphql$GraphQl$field('__schema'))
+		]));
+var $author$project$Main$sendRequest = function (url) {
+	return A4(
+		$ghivert$elm_graphql$GraphQl$Http$send,
+		{headers: _List_Nil, url: url},
+		function (result) {
+			var _v0 = A2($elm$core$Debug$log, 'result', result);
+			return $author$project$Main$NoOp;
+		},
+		$elm$json$Json$Decode$succeed('42'),
+		$ghivert$elm_graphql$GraphQl$query($author$project$Main$typesRequest));
+};
 var $elm$core$Result$toMaybe = function (result) {
 	if (result.$ === 'Ok') {
 		var v = result.a;
@@ -6147,25 +6438,72 @@ var $elm$core$Result$toMaybe = function (result) {
 };
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'NoOp') {
-			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-		} else {
-			var config = msg.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{
-						config: $elm$core$Result$toMaybe(config)
-					}),
-				$elm$core$Platform$Cmd$none);
+		switch (msg.$) {
+			case 'NoOp':
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+			case 'GotConfig':
+				var config = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							config: $elm$core$Result$toMaybe(config)
+						}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				var _v1 = model.config;
+				if (_v1.$ === 'Nothing') {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				} else {
+					var config = _v1.a;
+					return _Utils_Tuple2(
+						model,
+						$author$project$Main$sendRequest(config.graphqlEndpoint));
+				}
 		}
 	});
+var $author$project$Main$HitEndpoint = {$: 'HitEndpoint'};
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$Main$view = function (model) {
-	return $elm$html$Html$text(
-		$elm$core$Debug$toString(model));
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$text(
+				$elm$core$Debug$toString(model)),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Events$onClick($author$project$Main$HitEndpoint)
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Hit Endpoint')
+					]))
+			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});

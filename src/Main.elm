@@ -1,9 +1,13 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, text)
+import Html exposing (..)
+import Html.Attributes
+import Html.Events
 import Http
 import Json.Decode
+import GraphQl
+import GraphQl.Http
 
 -- TYPES
 type alias ConfigURL = String
@@ -19,6 +23,7 @@ type alias Model =
 type Msg
   = NoOp
   | GotConfig (Result Http.Error Config)
+  | HitEndpoint
 
 -- MAIN
 
@@ -56,13 +61,24 @@ update msg model =
         }
       , Cmd.none
       )
+    
+    HitEndpoint ->
+      case model.config of
+        Nothing ->
+          (model, Cmd.none)
+        
+        Just config ->
+          (model, sendRequest config.graphqlEndpoint)
 
 
 -- VIEW
 
 view : Model -> Html Msg
 view model =
-  text (Debug.toString model)
+  div []
+      [ text (Debug.toString model)
+      , button [Html.Events.onClick HitEndpoint ] [text "Hit Endpoint"]
+      ]
 
 
 -- SUBSCRIPTIONS
@@ -81,3 +97,28 @@ configDecoder : Json.Decode.Decoder Config
 configDecoder =
   Json.Decode.field "graphql_endpoint" Json.Decode.string
   |> Json.Decode.map Config
+
+-- {
+--  __schema {
+  --   types {
+  --     name
+  --   }
+  -- }
+-- }
+typesRequest : GraphQl.Operation GraphQl.Query GraphQl.Anonymous
+typesRequest =
+  GraphQl.object
+    [ GraphQl.field "__schema"
+      |> GraphQl.withSelectors
+        [ GraphQl.field "types"
+          |> GraphQl.withSelectors
+            [ GraphQl.field "name"              
+            ]
+        ]
+    ]
+  
+sendRequest url =
+  GraphQl.query typesRequest
+    |> GraphQl.Http.send { url = url, headers = [] } 
+      (\result -> let _ = Debug.log "result" result in NoOp)
+      (Json.Decode.succeed "42")
