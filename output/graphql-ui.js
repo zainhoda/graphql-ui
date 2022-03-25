@@ -6127,7 +6127,7 @@ var $author$project$Main$getConfig = function (configURL) {
 };
 var $author$project$Main$init = function (configURL) {
 	return _Utils_Tuple2(
-		{config: $elm$core$Maybe$Nothing},
+		{config: $elm$core$Maybe$Nothing, introspection: $elm$core$Maybe$Nothing},
 		$author$project$Main$getConfig(configURL));
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
@@ -6137,7 +6137,23 @@ var $author$project$Main$subscriptions = function (_v0) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Main$NoOp = {$: 'NoOp'};
+var $author$project$Main$GotIntrospection = function (a) {
+	return {$: 'GotIntrospection', a: a};
+};
+var $author$project$Graphql$Parser$ClassCaseName$raw = function (_v0) {
+	var rawName = _v0.a;
+	return rawName;
+};
+var $author$project$Graphql$Generator$Types$generate = function (types) {
+	return A2(
+		$elm$core$List$map,
+		function (x) {
+			var classCaseName = x.a;
+			var maybeDescription = x.c;
+			return $author$project$Graphql$Parser$ClassCaseName$raw(classCaseName);
+		},
+		types);
+};
 var $elm$json$Json$Decode$at = F2(
 	function (fields, decoder) {
 		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
@@ -6784,18 +6800,19 @@ var $author$project$Graphql$Parser$Type$decoder = A2(
 	$elm$json$Json$Decode$andThen,
 	$author$project$Graphql$Parser$Type$decodeKind,
 	A2($elm$json$Json$Decode$field, 'kind', $elm$json$Json$Decode$string));
-var $author$project$Graphql$Parser$decoder = A2(
+var $author$project$Graphql$Parser$typesDecoder = A2(
 	$elm$json$Json$Decode$at,
 	_List_fromArray(
 		['__schema', 'types']),
 	$elm$json$Json$Decode$list($author$project$Graphql$Parser$Type$decoder));
+var $author$project$Graphql$Parser$decoder = A2($elm$json$Json$Decode$map, $author$project$Graphql$Generator$Types$generate, $author$project$Graphql$Parser$typesDecoder);
 var $author$project$Main$introspectionQuery = '\n{"query":"query IntrospectionQuery {    __schema {      queryType {        name      }      mutationType {        name      }      subscriptionType {        name      }      types {        ...FullType      }    }  }  fragment FullType on __Type {    kind    name    description    fields(includeDeprecated: false) {      name      description      args {        ...InputValue      }      type {        ...TypeRef      }      isDeprecated      deprecationReason    }    inputFields {      ...InputValue    }    interfaces {      ...TypeRef    }    enumValues(includeDeprecated: false) {      name      description      isDeprecated      deprecationReason    }    possibleTypes {      ...TypeRef    }  }  fragment InputValue on __InputValue {    name    description    type { ...TypeRef }    defaultValue  }  fragment TypeRef on __Type {    kind    name    ofType {      kind      name      ofType {        kind        name        ofType {          kind          name          ofType {            kind            name            ofType {              kind              name              ofType {                kind                name                ofType {                  kind                  name                }              }            }          }        }      }    }  }","variables":null,"operationName":"IntrospectionQuery"}\n';
-var $elm$core$Debug$log = _Debug_log;
 var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
 var $elm$http$Http$stringBody = _Http_pair;
+var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$Main$runIntrospectionQuery = function (url) {
 	return $elm$http$Http$post(
 		{
@@ -6803,8 +6820,8 @@ var $author$project$Main$runIntrospectionQuery = function (url) {
 			expect: A2(
 				$elm$http$Http$expectJson,
 				function (result) {
-					var _v0 = A2($elm$core$Debug$log, 'result', result);
-					return $author$project$Main$NoOp;
+					var str = $elm$core$Debug$toString(result);
+					return $author$project$Main$GotIntrospection(str);
 				},
 				A2($elm$json$Json$Decode$field, 'data', $author$project$Graphql$Parser$decoder)),
 			url: url
@@ -6832,7 +6849,7 @@ var $author$project$Main$update = F2(
 							config: $elm$core$Result$toMaybe(config)
 						}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'HitEndpoint':
 				var _v1 = model.config;
 				if (_v1.$ === 'Nothing') {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
@@ -6842,6 +6859,15 @@ var $author$project$Main$update = F2(
 						model,
 						$author$project$Main$runIntrospectionQuery(config.graphqlEndpoint));
 				}
+			default:
+				var str = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							introspection: $elm$core$Maybe$Just(str)
+						}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $author$project$Main$HitEndpoint = {$: 'HitEndpoint'};
@@ -6864,9 +6890,18 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
+var $elm$html$Html$pre = _VirtualDom_node('pre');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $elm$core$Debug$toString = _Debug_toString;
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
 var $author$project$Main$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -6874,7 +6909,7 @@ var $author$project$Main$view = function (model) {
 		_List_fromArray(
 			[
 				$elm$html$Html$text(
-				$elm$core$Debug$toString(model)),
+				$elm$core$Debug$toString(model.config)),
 				A2(
 				$elm$html$Html$button,
 				_List_fromArray(
@@ -6884,6 +6919,14 @@ var $author$project$Main$view = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text('Hit Endpoint')
+					])),
+				A2(
+				$elm$html$Html$pre,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						A2($elm$core$Maybe$withDefault, 'Not Loaded', model.introspection))
 					]))
 			]));
 };

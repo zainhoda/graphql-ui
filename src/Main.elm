@@ -19,12 +19,14 @@ type alias Config =
 
 type alias Model = 
   { config: Maybe Config
+  , introspection: Maybe String
   }
 
 type Msg
   = NoOp
   | GotConfig (Result Http.Error Config)
   | HitEndpoint
+  | GotIntrospection String
 
 -- MAIN
 
@@ -43,6 +45,7 @@ main =
 init : ConfigURL -> ( Model, Cmd Msg )
 init configURL =
   ( { config = Nothing
+    , introspection = Nothing
     }
   , getConfig configURL
   )
@@ -71,14 +74,18 @@ update msg model =
         Just config ->
           (model, runIntrospectionQuery config.graphqlEndpoint)
 
+    GotIntrospection str ->
+      ( { model | introspection = Just str}, Cmd.none)
+
 
 -- VIEW
 
 view : Model -> Html Msg
 view model =
   div []
-      [ text (Debug.toString model)
+      [ text (Debug.toString model.config)
       , button [Html.Events.onClick HitEndpoint ] [text "Hit Endpoint"]
+      , pre [] [text (Maybe.withDefault "Not Loaded" model.introspection)]
       ]
 
 
@@ -132,7 +139,7 @@ runIntrospectionQuery url =
   Http.post 
     { url = url
     , body = Http.stringBody "application/json" introspectionQuery 
-    , expect = Http.expectJson (\result -> let _ = Debug.log "result" result in NoOp) (Json.Decode.field "data" Parser.decoder)
+    , expect = Http.expectJson (\result -> let str = Debug.toString result in GotIntrospection str) (Json.Decode.field "data" Parser.decoder)
     }
 
 

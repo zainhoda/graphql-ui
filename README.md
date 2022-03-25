@@ -24,6 +24,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 
 ## Basic Functionality
 - [x] Hit GraphQL endpoint with a query using code from https://package.elm-lang.org/packages/ghivert/elm-graphql/latest/
+- [ ] List Queries
+- [ ] List Mutations
 - [ ] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [ ] Display output
 
@@ -40,3 +42,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 
 ## Advanced
 - [ ] Verify config against GraphQL endpoint
+
+## Configs
+- GraphQL Queries to Views (with Buttons)
+- Buttons to Form Field prepopulation + named Mutation (or Query)
+    - Form Submit executes Mutation
