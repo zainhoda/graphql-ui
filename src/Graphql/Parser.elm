@@ -14,8 +14,17 @@ typesDecoder =
         )
 
 decoder =
-    typesDecoder
-    |> Decode.map Graphql.Generator.Types.generate
+    Decode.map4 Graphql.Generator.Types.sortedIntrospectionData
+        (Type.decoder
+            |> Decode.list
+            |> Decode.at [ "__schema", "types" ]
+        )
+        (Decode.at [ "__schema", "queryType", "name" ] Decode.string)
+        (Decode.maybe (Decode.at [ "__schema", "mutationType", "name" ] Decode.string))
+        (Decode.maybe (Decode.at [ "__schema", "subscriptionType", "name" ] Decode.string))
+        |> Decode.map Graphql.Generator.Types.generate
+    -- typesDecoder
+    -- |> Decode.map Graphql.Generator.Types.generate
 
 -- decoder : { apiSubmodule : List String, scalarCodecsModule : Maybe ModuleName } -> Decoder (Dict String String)
 -- decoder options =

@@ -4530,7 +4530,108 @@ function _Http_track(router, xhr, tracker)
 			size: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
 		}))));
 	});
-}var $elm$core$Basics$EQ = {$: 'EQ'};
+}
+
+// CREATE
+
+var _Regex_never = /.^/;
+
+var _Regex_fromStringWith = F2(function(options, string)
+{
+	var flags = 'g';
+	if (options.multiline) { flags += 'm'; }
+	if (options.caseInsensitive) { flags += 'i'; }
+
+	try
+	{
+		return $elm$core$Maybe$Just(new RegExp(string, flags));
+	}
+	catch(error)
+	{
+		return $elm$core$Maybe$Nothing;
+	}
+});
+
+
+// USE
+
+var _Regex_contains = F2(function(re, string)
+{
+	return string.match(re) !== null;
+});
+
+
+var _Regex_findAtMost = F3(function(n, re, str)
+{
+	var out = [];
+	var number = 0;
+	var string = str;
+	var lastIndex = re.lastIndex;
+	var prevLastIndex = -1;
+	var result;
+	while (number++ < n && (result = re.exec(string)))
+	{
+		if (prevLastIndex == re.lastIndex) break;
+		var i = result.length - 1;
+		var subs = new Array(i);
+		while (i > 0)
+		{
+			var submatch = result[i];
+			subs[--i] = submatch
+				? $elm$core$Maybe$Just(submatch)
+				: $elm$core$Maybe$Nothing;
+		}
+		out.push(A4($elm$regex$Regex$Match, result[0], result.index, number, _List_fromArray(subs)));
+		prevLastIndex = re.lastIndex;
+	}
+	re.lastIndex = lastIndex;
+	return _List_fromArray(out);
+});
+
+
+var _Regex_replaceAtMost = F4(function(n, re, replacer, string)
+{
+	var count = 0;
+	function jsReplacer(match)
+	{
+		if (count++ >= n)
+		{
+			return match;
+		}
+		var i = arguments.length - 3;
+		var submatches = new Array(i);
+		while (i > 0)
+		{
+			var submatch = arguments[i];
+			submatches[--i] = submatch
+				? $elm$core$Maybe$Just(submatch)
+				: $elm$core$Maybe$Nothing;
+		}
+		return replacer(A4($elm$regex$Regex$Match, match, arguments[arguments.length - 2], count, _List_fromArray(submatches)));
+	}
+	return string.replace(re, jsReplacer);
+});
+
+var _Regex_splitAtMost = F3(function(n, re, str)
+{
+	var string = str;
+	var out = [];
+	var start = re.lastIndex;
+	var restoreLastIndex = re.lastIndex;
+	while (n--)
+	{
+		var result = re.exec(string);
+		if (!result) break;
+		out.push(string.slice(start, result.index));
+		start = re.lastIndex;
+	}
+	out.push(string.slice(start));
+	re.lastIndex = restoreLastIndex;
+	return _List_fromArray(out);
+});
+
+var _Regex_infinity = Infinity;
+var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
 var $elm$core$List$cons = _List_cons;
@@ -6140,20 +6241,6 @@ var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Main$GotIntrospection = function (a) {
 	return {$: 'GotIntrospection', a: a};
 };
-var $author$project$Graphql$Parser$ClassCaseName$raw = function (_v0) {
-	var rawName = _v0.a;
-	return rawName;
-};
-var $author$project$Graphql$Generator$Types$generate = function (types) {
-	return A2(
-		$elm$core$List$map,
-		function (x) {
-			var classCaseName = x.a;
-			var maybeDescription = x.c;
-			return $author$project$Graphql$Parser$ClassCaseName$raw(classCaseName);
-		},
-		types);
-};
 var $elm$json$Json$Decode$at = F2(
 	function (fields, decoder) {
 		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
@@ -6800,12 +6887,383 @@ var $author$project$Graphql$Parser$Type$decoder = A2(
 	$elm$json$Json$Decode$andThen,
 	$author$project$Graphql$Parser$Type$decodeKind,
 	A2($elm$json$Json$Decode$field, 'kind', $elm$json$Json$Decode$string));
-var $author$project$Graphql$Parser$typesDecoder = A2(
-	$elm$json$Json$Decode$at,
-	_List_fromArray(
-		['__schema', 'types']),
-	$elm$json$Json$Decode$list($author$project$Graphql$Parser$Type$decoder));
-var $author$project$Graphql$Parser$decoder = A2($elm$json$Json$Decode$map, $author$project$Graphql$Generator$Types$generate, $author$project$Graphql$Parser$typesDecoder);
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $author$project$Graphql$Parser$ClassCaseName$isBuiltIn = function (_v0) {
+	var rawName = _v0.a;
+	return A2($elm$core$String$startsWith, '__', rawName) ? true : false;
+};
+var $elm$core$Basics$not = _Basics_not;
+var $author$project$Graphql$Generator$Types$excludeBuiltIns = function (typeDefinitions) {
+	return A2(
+		$elm$core$List$filter,
+		function (_v0) {
+			var name = _v0.a;
+			var definableType = _v0.b;
+			var description = _v0.c;
+			return !$author$project$Graphql$Parser$ClassCaseName$isBuiltIn(name);
+		},
+		typeDefinitions);
+};
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $author$project$Graphql$Generator$Types$excludeMutation = F2(
+	function (_v0, typeDefinitions) {
+		var mutation = _v0.mutation;
+		if (mutation.$ === 'Just') {
+			var mutationObjectName = mutation.a;
+			return A2(
+				$elm$core$List$filter,
+				function (_v2) {
+					var name = _v2.a;
+					var definableType = _v2.b;
+					var description = _v2.c;
+					return !_Utils_eq(name, mutationObjectName);
+				},
+				typeDefinitions);
+		} else {
+			return typeDefinitions;
+		}
+	});
+var $author$project$Graphql$Generator$Types$excludeQuery = F2(
+	function (_v0, typeDefinitions) {
+		var query = _v0.query;
+		return A2(
+			$elm$core$List$filter,
+			function (_v1) {
+				var name = _v1.a;
+				var definableType = _v1.b;
+				var description = _v1.c;
+				return !_Utils_eq(name, query);
+			},
+			typeDefinitions);
+	});
+var $author$project$Graphql$Generator$Types$excludeSubscription = F2(
+	function (_v0, typeDefinitions) {
+		var subscription = _v0.subscription;
+		if (subscription.$ === 'Just') {
+			var subscriptionObjectName = subscription.a;
+			return A2(
+				$elm$core$List$filter,
+				function (_v2) {
+					var name = _v2.a;
+					var definableType = _v2.b;
+					var description = _v2.c;
+					return !_Utils_eq(name, subscriptionObjectName);
+				},
+				typeDefinitions);
+		} else {
+			return typeDefinitions;
+		}
+	});
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $author$project$Graphql$Parser$ClassCaseName$raw = function (_v0) {
+	var rawName = _v0.a;
+	return rawName;
+};
+var $author$project$Graphql$Generator$Types$interfacePossibleTypesDict = function (typeDefs) {
+	return $elm$core$Dict$fromList(
+		A2(
+			$elm$core$List$filterMap,
+			function (_v0) {
+				var typeName = _v0.a;
+				var definableType = _v0.b;
+				var description = _v0.c;
+				if (definableType.$ === 'InterfaceType') {
+					var fields = definableType.a;
+					var possibleTypes = definableType.b;
+					return $elm$core$Maybe$Just(
+						_Utils_Tuple2(
+							$author$project$Graphql$Parser$ClassCaseName$raw(typeName),
+							possibleTypes));
+				} else {
+					return $elm$core$Maybe$Nothing;
+				}
+			},
+			typeDefs));
+};
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $author$project$Graphql$Generator$Types$toViews = F2(
+	function (context, definition) {
+		var name = definition.a;
+		var definableType = definition.b;
+		var description = definition.c;
+		return name;
+	});
+var $author$project$Graphql$Generator$Types$generate = function (_v0) {
+	var typeDefinitions = _v0.typeDefinitions;
+	var queryObjectName = _v0.queryObjectName;
+	var mutationObjectName = _v0.mutationObjectName;
+	var subscriptionObjectName = _v0.subscriptionObjectName;
+	var context = {
+		interfaces: $author$project$Graphql$Generator$Types$interfacePossibleTypesDict(typeDefinitions),
+		mutation: A2($elm$core$Maybe$map, $author$project$Graphql$Parser$ClassCaseName$build, mutationObjectName),
+		query: $author$project$Graphql$Parser$ClassCaseName$build(queryObjectName),
+		subscription: A2($elm$core$Maybe$map, $author$project$Graphql$Parser$ClassCaseName$build, subscriptionObjectName)
+	};
+	var definitionsWithExclusions = A2(
+		$author$project$Graphql$Generator$Types$excludeSubscription,
+		context,
+		A2(
+			$author$project$Graphql$Generator$Types$excludeMutation,
+			context,
+			A2(
+				$author$project$Graphql$Generator$Types$excludeQuery,
+				context,
+				$author$project$Graphql$Generator$Types$excludeBuiltIns(typeDefinitions))));
+	return A2(
+		$elm$core$List$map,
+		$author$project$Graphql$Generator$Types$toViews(context),
+		$author$project$Graphql$Generator$Types$excludeBuiltIns(typeDefinitions));
+};
+var $elm$core$List$sortBy = _List_sortBy;
+var $elm$core$String$fromList = _String_fromList;
+var $elm$core$String$foldr = _String_foldr;
+var $elm$core$String$toList = function (string) {
+	return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
+};
+var $elm$core$Char$toUpper = _Char_toUpper;
+var $author$project$Graphql$Parser$Normalize$capitilize = function (string) {
+	var _v0 = $elm$core$String$toList(string);
+	if (_v0.b) {
+		var firstChar = _v0.a;
+		var rest = _v0.b;
+		return $elm$core$String$fromList(
+			A2(
+				$elm$core$List$cons,
+				$elm$core$Char$toUpper(firstChar),
+				rest));
+	} else {
+		return '';
+	}
+};
+var $elm$core$Basics$always = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $elm$regex$Regex$Match = F4(
+	function (match, index, number, submatches) {
+		return {index: index, match: match, number: number, submatches: submatches};
+	});
+var $elm$regex$Regex$fromStringWith = _Regex_fromStringWith;
+var $elm$regex$Regex$fromString = function (string) {
+	return A2(
+		$elm$regex$Regex$fromStringWith,
+		{caseInsensitive: false, multiline: false},
+		string);
+};
+var $elm$regex$Regex$never = _Regex_never;
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $elm_community$string_extra$String$Extra$regexFromString = A2(
+	$elm$core$Basics$composeR,
+	$elm$regex$Regex$fromString,
+	$elm$core$Maybe$withDefault($elm$regex$Regex$never));
+var $elm$regex$Regex$replace = _Regex_replaceAtMost(_Regex_infinity);
+var $elm$core$String$toUpper = _String_toUpper;
+var $elm$core$String$trim = _String_trim;
+var $elm_community$string_extra$String$Extra$camelize = function (string) {
+	return A3(
+		$elm$regex$Regex$replace,
+		$elm_community$string_extra$String$Extra$regexFromString('[-_\\s]+(.)?'),
+		function (_v0) {
+			var submatches = _v0.submatches;
+			if (submatches.b && (submatches.a.$ === 'Just')) {
+				var match = submatches.a.a;
+				return $elm$core$String$toUpper(match);
+			} else {
+				return '';
+			}
+		},
+		$elm$core$String$trim(string));
+};
+var $elm$core$String$replace = F3(
+	function (before, after, string) {
+		return A2(
+			$elm$core$String$join,
+			after,
+			A2($elm$core$String$split, before, string));
+	});
+var $elm$core$String$cons = _String_cons;
+var $elm_community$string_extra$String$Extra$changeCase = F2(
+	function (mutator, word) {
+		return A2(
+			$elm$core$Maybe$withDefault,
+			'',
+			A2(
+				$elm$core$Maybe$map,
+				function (_v0) {
+					var head = _v0.a;
+					var tail = _v0.b;
+					return A2(
+						$elm$core$String$cons,
+						mutator(head),
+						tail);
+				},
+				$elm$core$String$uncons(word)));
+	});
+var $elm_community$string_extra$String$Extra$toSentenceCase = function (word) {
+	return A2($elm_community$string_extra$String$Extra$changeCase, $elm$core$Char$toUpper, word);
+};
+var $elm_community$string_extra$String$Extra$classify = function (string) {
+	return $elm_community$string_extra$String$Extra$toSentenceCase(
+		A3(
+			$elm$core$String$replace,
+			' ',
+			'',
+			$elm_community$string_extra$String$Extra$camelize(
+				A3(
+					$elm$regex$Regex$replace,
+					$elm_community$string_extra$String$Extra$regexFromString('[\\W_]'),
+					$elm$core$Basics$always(' '),
+					string))));
+};
+var $author$project$Graphql$Parser$Normalize$isAllUpper = function (string) {
+	return _Utils_eq(
+		$elm$core$String$toUpper(string),
+		string);
+};
+var $elm$core$String$toLower = _String_toLower;
+var $elm$regex$Regex$find = _Regex_findAtMost(_Regex_infinity);
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$Graphql$Parser$Normalize$underscores = function (string) {
+	var regexFromString = A2(
+		$elm$core$Basics$composeR,
+		$elm$regex$Regex$fromString,
+		$elm$core$Maybe$withDefault($elm$regex$Regex$never));
+	var _v0 = A2(
+		$elm$core$Maybe$map,
+		function ($) {
+			return $.submatches;
+		},
+		$elm$core$List$head(
+			A2(
+				$elm$regex$Regex$find,
+				regexFromString('^(_*)([^_]?.*[^_]?)(_*)$'),
+				string)));
+	if (_v0.$ === 'Just') {
+		if (((_v0.a.b && _v0.a.b.b) && _v0.a.b.b.b) && (!_v0.a.b.b.b.b)) {
+			var _v1 = _v0.a;
+			var leading = _v1.a;
+			var _v2 = _v1.b;
+			var remaining = _v2.a;
+			var _v3 = _v2.b;
+			var trailing = _v3.a;
+			return {
+				leading: A2($elm$core$Maybe$withDefault, '', leading),
+				remaining: remaining,
+				trailing: A2($elm$core$Maybe$withDefault, '', trailing)
+			};
+		} else {
+			return {leading: '', remaining: $elm$core$Maybe$Nothing, trailing: ''};
+		}
+	} else {
+		return {leading: '', remaining: $elm$core$Maybe$Nothing, trailing: ''};
+	}
+};
+var $author$project$Graphql$Parser$Normalize$capitalized = function (name) {
+	var group = $author$project$Graphql$Parser$Normalize$underscores(name);
+	var _v0 = group.remaining;
+	if (_v0.$ === 'Nothing') {
+		return 'underscore' + (group.leading + group.trailing);
+	} else {
+		var remaining = _v0.a;
+		return _Utils_ap(
+			$author$project$Graphql$Parser$Normalize$isAllUpper(remaining) ? $elm_community$string_extra$String$Extra$classify(
+				$elm$core$String$toLower(remaining)) : $author$project$Graphql$Parser$Normalize$capitilize(remaining),
+			_Utils_ap(group.leading, group.trailing));
+	}
+};
+var $author$project$Graphql$Parser$ClassCaseName$normalized = function (_v0) {
+	var rawName = _v0.a;
+	return $author$project$Graphql$Parser$Normalize$capitalized(rawName);
+};
+var $author$project$Graphql$Generator$Types$typeDefName = function (_v0) {
+	var name = _v0.a;
+	var definableType = _v0.b;
+	var description = _v0.c;
+	return $author$project$Graphql$Parser$ClassCaseName$normalized(name);
+};
+var $author$project$Graphql$Generator$Types$sortedIntrospectionData = F4(
+	function (typeDefinitions, queryObjectName, mutationObjectName, subscriptionObjectName) {
+		return {
+			mutationObjectName: mutationObjectName,
+			queryObjectName: queryObjectName,
+			subscriptionObjectName: subscriptionObjectName,
+			typeDefinitions: A2($elm$core$List$sortBy, $author$project$Graphql$Generator$Types$typeDefName, typeDefinitions)
+		};
+	});
+var $author$project$Graphql$Parser$decoder = A2(
+	$elm$json$Json$Decode$map,
+	$author$project$Graphql$Generator$Types$generate,
+	A5(
+		$elm$json$Json$Decode$map4,
+		$author$project$Graphql$Generator$Types$sortedIntrospectionData,
+		A2(
+			$elm$json$Json$Decode$at,
+			_List_fromArray(
+				['__schema', 'types']),
+			$elm$json$Json$Decode$list($author$project$Graphql$Parser$Type$decoder)),
+		A2(
+			$elm$json$Json$Decode$at,
+			_List_fromArray(
+				['__schema', 'queryType', 'name']),
+			$elm$json$Json$Decode$string),
+		$elm$json$Json$Decode$maybe(
+			A2(
+				$elm$json$Json$Decode$at,
+				_List_fromArray(
+					['__schema', 'mutationType', 'name']),
+				$elm$json$Json$Decode$string)),
+		$elm$json$Json$Decode$maybe(
+			A2(
+				$elm$json$Json$Decode$at,
+				_List_fromArray(
+					['__schema', 'subscriptionType', 'name']),
+				$elm$json$Json$Decode$string))));
 var $author$project$Main$introspectionQuery = '\n{"query":"query IntrospectionQuery {    __schema {      queryType {        name      }      mutationType {        name      }      subscriptionType {        name      }      types {        ...FullType      }    }  }  fragment FullType on __Type {    kind    name    description    fields(includeDeprecated: false) {      name      description      args {        ...InputValue      }      type {        ...TypeRef      }      isDeprecated      deprecationReason    }    inputFields {      ...InputValue    }    interfaces {      ...TypeRef    }    enumValues(includeDeprecated: false) {      name      description      isDeprecated      deprecationReason    }    possibleTypes {      ...TypeRef    }  }  fragment InputValue on __InputValue {    name    description    type { ...TypeRef }    defaultValue  }  fragment TypeRef on __Type {    kind    name    ofType {      kind      name      ofType {        kind        name        ofType {          kind          name          ofType {            kind            name            ofType {              kind              name              ofType {                kind                name                ofType {                  kind                  name                }              }            }          }        }      }    }  }","variables":null,"operationName":"IntrospectionQuery"}\n';
 var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
@@ -6893,15 +7351,6 @@ var $elm$html$Html$Events$onClick = function (msg) {
 var $elm$html$Html$pre = _VirtualDom_node('pre');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
 var $author$project$Main$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
