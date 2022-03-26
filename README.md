@@ -28,7 +28,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] List Mutations
 - [x] Forms from Query/Mutation Arguments
 - [x] Store form values in a Dict QueryName (Dict FieldName String)
-- [ ] Form fields to GraphQL Query/Mutation
+- [x] Form fields to GraphQL Query/Mutation
+- [ ] Add all the fields to the request
 - [ ] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [ ] Tables/FieldViewer from Query Results
 - [ ] Use the typeRef of the argument for displaying the form field
