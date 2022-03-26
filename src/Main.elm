@@ -14,6 +14,12 @@ import Html.Attributes exposing (title)
 import Graphql.Parser.Type as Type exposing (TypeDefinition)
 import Graphql.Parser.CamelCaseName as CamelCaseName
 import Graphql.Parser.CamelCaseName exposing (CamelCaseName)
+import Html.Attributes exposing (class)
+import Graphql.Parser.Type exposing (IsNullable)
+import Graphql.Parser.Type exposing (IsNullable(..))
+import Dict
+import Dict.Extra
+import Graphql.Parser.Type exposing (Field)
 
 -- TYPES
 type alias ConfigURL = String
@@ -25,6 +31,7 @@ type alias Config =
 type alias Model = 
   { config: Maybe Config
   , introspection: Result Http.Error ApiInteractions
+  , formInput: Dict.Dict String (Dict.Dict String String)
   }
 
 type Msg
@@ -32,6 +39,7 @@ type Msg
   | GotConfig (Result Http.Error Config)
   | HitEndpoint
   | GotIntrospection (Result Http.Error ApiInteractions)
+  | UpdateFormInput String String String
 
 -- MAIN
 
@@ -51,6 +59,7 @@ init : ConfigURL -> ( Model, Cmd Msg )
 init configURL =
   ( { config = Nothing
     , introspection = Result.Err <| Http.BadUrl "Not Asked Yet -- TODO: Change this to another type"
+    , formInput = Dict.empty
     }
   , getConfig configURL
   )
@@ -82,14 +91,28 @@ update msg model =
     GotIntrospection apiInteractionsResult ->
       ( { model | introspection = apiInteractionsResult}, Cmd.none)
 
+    UpdateFormInput formName formField formValue ->
+      ( { model 
+        | formInput = 
+            let newFormFieldDict = model.formInput 
+                  |> Dict.get formName
+                  |> Maybe.withDefault Dict.empty
+                  |> Dict.insert formField formValue
+            in
+              Dict.insert formName newFormFieldDict model.formInput
+        } 
+      , Cmd.none
+      )
+
 
 -- VIEW
 
 view : Model -> Html Msg
 view model =
-  div []
-      [ text (Debug.toString model.config)
-      , button [Html.Events.onClick HitEndpoint ] [text "Hit Endpoint"]
+  div [Html.Attributes.class "container"]
+      [ pre [] [text (Debug.toString model.config)]
+      , pre [] [text (Debug.toString model.formInput)]
+      , button [Html.Attributes.class "button is-large is-success" , Html.Events.onClick HitEndpoint ] [text "Introspect!"]
       , resultView apiView model.introspection
       ]
 
@@ -120,7 +143,7 @@ apiView : ApiInteractions -> Html Msg
 apiView apiInteractions = 
   let queries =
         apiInteractions.queries
-        |> List.map typeView
+        |> List.map formView
       mutations =
         apiInteractions.mutations
         |> List.map Debug.toString
@@ -133,13 +156,27 @@ apiView apiInteractions =
 
   in
     div []
-      [ h1 [] [text "Queries"]
+      [ h1 [Html.Attributes.class "title"] [text "Queries"]
       , ul [] queries
-      , h1 [] [text "Mutations"]
+      , h1 [Html.Attributes.class "title"] [text "Mutations"]
       , ul [] mutations
-      , h1 [] [text "Base Types"]
+      , h1 [Html.Attributes.class "title"] [text "Base Types"]
       , ul [] baseTypes
       ]
+
+formView : Type.TypeDefinition -> Html Msg
+formView (Type.TypeDefinition name definableType description) = 
+  case definableType of
+    Type.ScalarType ->
+      text "ScalarType"
+    
+    Type.ObjectType listOfField ->
+      listOfField
+        |> List.map fieldTypeToForm
+        |> div []
+
+    _ ->
+      text "Not Implemented"
 
 typeView : TypeDefinition -> Html Msg
 typeView (Type.TypeDefinition name definableType description) =
@@ -190,6 +227,58 @@ nullableToString isNullable =
       Type.NonNullable ->
         "(Non-Nullable)"
 
+fieldTypeToForm : Type.Field -> Html Msg
+fieldTypeToForm fieldType =
+  div [] 
+    (
+      ( h2 [Html.Attributes.class "subtitle"] [text (nameToString fieldType.name) ] ) ::
+      (List.map (argToFormField (nameToString fieldType.name)) fieldType.args) ++
+      [ button [ Html.Attributes.class "button is-small is-success" ] [text "Submit"] ]
+    )
+
+argToFormField : String -> Type.Arg -> Html Msg
+argToFormField formName arg =
+  div
+    [ Html.Attributes.class "field" ]
+    [ label [Html.Attributes.class "label"] [text (nameToString arg.name) ] 
+    , div 
+      [ Html.Attributes.class "control" ] 
+      [ input [ Html.Attributes.class "input"
+              , Html.Attributes.type_ "text"
+              , Html.Attributes.placeholder (arg.description |> Maybe.withDefault "") 
+              , Html.Events.onInput (UpdateFormInput formName (nameToString arg.name))
+              ] [] 
+      ]
+    ]
+--   <div class="field">
+--   <label class="label">Name</label>
+--   <div class="control">
+--     <input class="input" type="text" placeholder="Text input">
+--   </div>
+-- </div>
+
+nullableField : Type.IsNullable -> Html Msg
+nullableField isNullable =
+  case isNullable of
+    NonNullable ->
+      text ""
+    
+    Nullable ->
+      div 
+        [ Html.Attributes.class "control" ]
+        [ label 
+          [Html.Attributes.class "radio"] 
+          [ input 
+            [Html.Attributes.type_ "radio", Html.Attributes.name "nullable"] 
+            [text "Null"]
+          ]
+        , label 
+          [Html.Attributes.class "radio"] 
+          [ input 
+            [Html.Attributes.type_ "radio", Html.Attributes.name "nullable"] 
+            [text "Value"]
+          ]
+        ]
 argToString : Type.Arg -> String
 argToString arg =
   (nameToString arg.name)

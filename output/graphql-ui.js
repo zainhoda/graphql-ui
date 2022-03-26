@@ -5423,6 +5423,8 @@ var $elm$browser$Browser$element = _Browser_element;
 var $elm$http$Http$BadUrl = function (a) {
 	return {$: 'BadUrl', a: a};
 };
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $author$project$Main$GotConfig = function (a) {
 	return {$: 'GotConfig', a: a};
 };
@@ -5455,8 +5457,6 @@ var $elm$http$Http$Sending = function (a) {
 	return {$: 'Sending', a: a};
 };
 var $elm$http$Http$Timeout_ = {$: 'Timeout_'};
-var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$core$Maybe$isJust = function (maybe) {
 	if (maybe.$ === 'Just') {
 		return true;
@@ -6230,6 +6230,7 @@ var $author$project$Main$init = function (configURL) {
 	return _Utils_Tuple2(
 		{
 			config: $elm$core$Maybe$Nothing,
+			formInput: $elm$core$Dict$empty,
 			introspection: $elm$core$Result$Err(
 				$elm$http$Http$BadUrl('Not Asked Yet -- TODO: Change this to another type'))
 		},
@@ -7342,22 +7343,53 @@ var $author$project$Main$update = F2(
 						model,
 						$author$project$Main$runIntrospectionQuery(config.graphqlEndpoint));
 				}
-			default:
+			case 'GotIntrospection':
 				var apiInteractionsResult = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{introspection: apiInteractionsResult}),
 					$elm$core$Platform$Cmd$none);
+			default:
+				var formName = msg.a;
+				var formField = msg.b;
+				var formValue = msg.c;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							formInput: function () {
+								var newFormFieldDict = A3(
+									$elm$core$Dict$insert,
+									formField,
+									formValue,
+									A2(
+										$elm$core$Maybe$withDefault,
+										$elm$core$Dict$empty,
+										A2($elm$core$Dict$get, formName, model.formInput)));
+								return A3($elm$core$Dict$insert, formName, newFormFieldDict, model.formInput);
+							}()
+						}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $author$project$Main$HitEndpoint = {$: 'HitEndpoint'};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $elm$html$Html$h1 = _VirtualDom_node('h1');
-var $elm$html$Html$li = _VirtualDom_node('li');
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $elm$core$Debug$toString = _Debug_toString;
+var $author$project$Main$UpdateFormInput = F3(
+	function (a, b, c) {
+		return {$: 'UpdateFormInput', a: a, b: b, c: c};
+	});
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$label = _VirtualDom_node('label');
 var $author$project$Graphql$Parser$CamelCaseName$raw = function (_v0) {
 	var name = _v0.a;
 	return name;
@@ -7365,36 +7397,125 @@ var $author$project$Graphql$Parser$CamelCaseName$raw = function (_v0) {
 var $author$project$Main$nameToString = function (camelCaseName) {
 	return $author$project$Graphql$Parser$CamelCaseName$raw(camelCaseName);
 };
-var $author$project$Main$nullableToString = function (isNullable) {
-	if (isNullable.$ === 'Nullable') {
-		return '(Nullable)';
-	} else {
-		return '(Non-Nullable)';
-	}
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
 };
-var $author$project$Main$typeRefToString = function (_v0) {
-	var referrableType = _v0.a;
-	var isNullable = _v0.b;
-	return function () {
-		if (referrableType.$ === 'Scalar') {
-			var scalar = referrableType.a;
-			return $elm$core$Debug$toString(scalar);
-		} else {
-			return 'TODO: TypeReference';
-		}
-	}() + (' ' + $author$project$Main$nullableToString(isNullable));
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
 };
-var $author$project$Main$argToString = function (arg) {
-	return $author$project$Main$nameToString(arg.name) + (' - ' + $author$project$Main$typeRefToString(arg.typeRef));
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
-var $author$project$Main$objectFieldToString = function (field) {
-	return $author$project$Main$nameToString(field.name) + (' - ' + ($author$project$Main$typeRefToString(field.typeRef) + (' : ' + A2(
-		$elm$core$String$join,
-		', ',
-		A2($elm$core$List$map, $author$project$Main$argToString, field.args)))));
+var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $author$project$Main$argToFormField = F2(
+	function (formName, arg) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('field')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$label,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('label')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(
+							$author$project$Main$nameToString(arg.name))
+						])),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('control')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$input,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('input'),
+									$elm$html$Html$Attributes$type_('text'),
+									$elm$html$Html$Attributes$placeholder(
+									A2($elm$core$Maybe$withDefault, '', arg.description)),
+									$elm$html$Html$Events$onInput(
+									A2(
+										$author$project$Main$UpdateFormInput,
+										formName,
+										$author$project$Main$nameToString(arg.name)))
+								]),
+							_List_Nil)
+						]))
+				]));
+	});
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$html$Html$h2 = _VirtualDom_node('h2');
+var $author$project$Main$fieldTypeToForm = function (fieldType) {
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		A2(
+			$elm$core$List$cons,
+			A2(
+				$elm$html$Html$h2,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('subtitle')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$author$project$Main$nameToString(fieldType.name))
+					])),
+			_Utils_ap(
+				A2(
+					$elm$core$List$map,
+					$author$project$Main$argToFormField(
+						$author$project$Main$nameToString(fieldType.name)),
+					fieldType.args),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('button is-small is-success')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Submit')
+							]))
+					]))));
 };
-var $elm$html$Html$ul = _VirtualDom_node('ul');
-var $author$project$Main$typeView = function (_v0) {
+var $author$project$Main$formView = function (_v0) {
 	var name = _v0.a;
 	var definableType = _v0.b;
 	var description = _v0.c;
@@ -7404,26 +7525,19 @@ var $author$project$Main$typeView = function (_v0) {
 		case 'ObjectType':
 			var listOfField = definableType.a;
 			return A2(
-				$elm$html$Html$ul,
+				$elm$html$Html$div,
 				_List_Nil,
-				A2(
-					$elm$core$List$map,
-					function (x) {
-						return A2(
-							$elm$html$Html$li,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(x)
-								]));
-					},
-					A2($elm$core$List$map, $author$project$Main$objectFieldToString, listOfField)));
+				A2($elm$core$List$map, $author$project$Main$fieldTypeToForm, listOfField));
 		default:
 			return $elm$html$Html$text('Not Implemented');
 	}
 };
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $elm$html$Html$li = _VirtualDom_node('li');
+var $elm$core$Debug$toString = _Debug_toString;
+var $elm$html$Html$ul = _VirtualDom_node('ul');
 var $author$project$Main$apiView = function (apiInteractions) {
-	var queries = A2($elm$core$List$map, $author$project$Main$typeView, apiInteractions.queries);
+	var queries = A2($elm$core$List$map, $author$project$Main$formView, apiInteractions.queries);
 	var mutations = A2(
 		$elm$core$List$map,
 		function (x) {
@@ -7455,7 +7569,10 @@ var $author$project$Main$apiView = function (apiInteractions) {
 			[
 				A2(
 				$elm$html$Html$h1,
-				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('title')
+					]),
 				_List_fromArray(
 					[
 						$elm$html$Html$text('Queries')
@@ -7463,7 +7580,10 @@ var $author$project$Main$apiView = function (apiInteractions) {
 				A2($elm$html$Html$ul, _List_Nil, queries),
 				A2(
 				$elm$html$Html$h1,
-				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('title')
+					]),
 				_List_fromArray(
 					[
 						$elm$html$Html$text('Mutations')
@@ -7471,7 +7591,10 @@ var $author$project$Main$apiView = function (apiInteractions) {
 				A2($elm$html$Html$ul, _List_Nil, mutations),
 				A2(
 				$elm$html$Html$h1,
-				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('title')
+					]),
 				_List_fromArray(
 					[
 						$elm$html$Html$text('Base Types')
@@ -7479,11 +7602,9 @@ var $author$project$Main$apiView = function (apiInteractions) {
 				A2($elm$html$Html$ul, _List_Nil, baseTypes)
 			]));
 };
-var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var $elm$html$Html$Events$on = F2(
 	function (event, decoder) {
 		return A2(
@@ -7497,6 +7618,7 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
+var $elm$html$Html$pre = _VirtualDom_node('pre');
 var $author$project$Main$resultView = F2(
 	function (contentsView, result) {
 		if (result.$ === 'Err') {
@@ -7525,20 +7647,38 @@ var $author$project$Main$resultView = F2(
 var $author$project$Main$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
-		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text(
-				$elm$core$Debug$toString(model.config)),
+				$elm$html$Html$Attributes$class('container')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$pre,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$elm$core$Debug$toString(model.config))
+					])),
+				A2(
+				$elm$html$Html$pre,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$elm$core$Debug$toString(model.formInput))
+					])),
 				A2(
 				$elm$html$Html$button,
 				_List_fromArray(
 					[
+						$elm$html$Html$Attributes$class('button is-large is-success'),
 						$elm$html$Html$Events$onClick($author$project$Main$HitEndpoint)
 					]),
 				_List_fromArray(
 					[
-						$elm$html$Html$text('Hit Endpoint')
+						$elm$html$Html$text('Introspect!')
 					])),
 				A2($author$project$Main$resultView, $author$project$Main$apiView, model.introspection)
 			]));

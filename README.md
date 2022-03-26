@@ -26,10 +26,16 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Hit GraphQL endpoint with a query using code from https://package.elm-lang.org/packages/ghivert/elm-graphql/latest/
 - [x] List Queries
 - [x] List Mutations
-- [ ] Forms from Query/Mutation Arguments
+- [x] Forms from Query/Mutation Arguments
+- [x] Store form values in a Dict QueryName (Dict FieldName String)
 - [ ] Form fields to GraphQL Query/Mutation
 - [ ] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [ ] Tables/FieldViewer from Query Results
+- [ ] Use the typeRef of the argument for displaying the form field
+- [ ] Use the typeRef of the argument for storing the form field
+- [ ] Use the nullability when displaying the form field
+- [ ] Use the nullability when inputting the form field
+- [ ] Use the nullability when making the GraphQL query
 
 ## Linking UI Elements
 - [ ] List (Tab, Form)
@@ -47,3 +53,6 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - GraphQL Queries to Views (with Buttons)
 - Buttons to Form Field prepopulation + named Mutation (or Query)
     - Form Submit executes Mutation
+
+## CSS
+- Bulma/Bootstrap Class Names for HTML elements as well as custom class names for each element (so they can be overridden)
