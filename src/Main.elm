@@ -40,6 +40,7 @@ type Msg
   | HitEndpoint
   | GotIntrospection (Result Http.Error ApiInteractions)
   | UpdateFormInput String String String
+  | SubmitForm String
 
 -- MAIN
 
@@ -103,6 +104,9 @@ update msg model =
         } 
       , Cmd.none
       )
+    
+    SubmitForm formName ->
+      ( model, submitForm model formName)
 
 
 -- VIEW
@@ -233,7 +237,7 @@ fieldTypeToForm fieldType =
     (
       ( h2 [Html.Attributes.class "subtitle"] [text (nameToString fieldType.name) ] ) ::
       (List.map (argToFormField (nameToString fieldType.name)) fieldType.args) ++
-      [ button [ Html.Attributes.class "button is-small is-success" ] [text "Submit"] ]
+      [ button [ Html.Attributes.class "button is-small is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name)) ] [text "Submit"] ]
     )
 
 argToFormField : String -> Type.Arg -> Html Msg
@@ -302,13 +306,6 @@ configDecoder =
   Json.Decode.field "graphql_endpoint" Json.Decode.string
   |> Json.Decode.map Config
 
--- {
---  __schema {
-  --   types {
-  --     name
-  --   }
-  -- }
--- }
 typesRequest : GraphQl.Operation GraphQl.Query GraphQl.Anonymous
 typesRequest =
   GraphQl.object
@@ -325,12 +322,14 @@ typesRequest =
         ]
     ]
   
-sendRequest url =
-  GraphQl.query typesRequest
+-- sendRequest : String -> Request -> Cmd Msg
+sendRequest url request =
+  GraphQl.query request
     |> GraphQl.Http.send { url = url, headers = [] } 
       (\result -> let _ = Debug.log "result" result in NoOp)
       (Json.Decode.succeed "42")
 
+runIntrospectionQuery : String -> Cmd Msg
 runIntrospectionQuery url =
   Http.post 
     { url = url
@@ -338,6 +337,27 @@ runIntrospectionQuery url =
     , expect = Http.expectJson GotIntrospection (Json.Decode.field "data" Parser.decoder)
     }
 
+submitForm : Model -> String -> Cmd Msg
+submitForm model formName =
+  let formValues = Dict.get formName model.formInput
+        |> Maybe.withDefault Dict.empty
+        |> Dict.toList
+      
+      addArguments x = 
+        List.foldl (\(fieldName, fieldValue) -> \y -> y |> GraphQl.withArgument fieldName (GraphQl.string fieldValue) ) x formValues
+      request = 
+        GraphQl.object 
+          [ GraphQl.field formName
+            |> addArguments
+            |> GraphQl.withSelectors [GraphQl.field "id"]
+          ]
+  in
+    case model.config of
+      Nothing ->
+        Cmd.none
+      
+      Just config ->
+        sendRequest config.graphqlEndpoint request
 
 -- CONSTS
 
