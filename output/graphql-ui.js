@@ -5420,6 +5420,9 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
+var $elm$http$Http$BadUrl = function (a) {
+	return {$: 'BadUrl', a: a};
+};
 var $author$project$Main$GotConfig = function (a) {
 	return {$: 'GotConfig', a: a};
 };
@@ -6005,9 +6008,6 @@ var $elm$http$Http$BadBody = function (a) {
 var $elm$http$Http$BadStatus = function (a) {
 	return {$: 'BadStatus', a: a};
 };
-var $elm$http$Http$BadUrl = function (a) {
-	return {$: 'BadUrl', a: a};
-};
 var $elm$http$Http$NetworkError = {$: 'NetworkError'};
 var $elm$http$Http$Timeout = {$: 'Timeout'};
 var $elm$http$Http$resolve = F2(
@@ -6228,7 +6228,11 @@ var $author$project$Main$getConfig = function (configURL) {
 };
 var $author$project$Main$init = function (configURL) {
 	return _Utils_Tuple2(
-		{config: $elm$core$Maybe$Nothing, introspection: $elm$core$Maybe$Nothing},
+		{
+			config: $elm$core$Maybe$Nothing,
+			introspection: $elm$core$Result$Err(
+				$elm$http$Http$BadUrl('Not Asked Yet -- TODO: Change this to another type'))
+		},
 		$author$project$Main$getConfig(configURL));
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
@@ -7011,12 +7015,36 @@ var $elm$core$Maybe$map = F2(
 			return $elm$core$Maybe$Nothing;
 		}
 	});
-var $author$project$Graphql$Generator$Types$toViews = F2(
-	function (context, definition) {
-		var name = definition.a;
-		var definableType = definition.b;
-		var description = definition.c;
-		return name;
+var $author$project$Graphql$Generator$Types$onlyMutations = F2(
+	function (_v0, typeDefinitions) {
+		var mutation = _v0.mutation;
+		if (mutation.$ === 'Just') {
+			var mutationObjectName = mutation.a;
+			return A2(
+				$elm$core$List$filter,
+				function (_v2) {
+					var name = _v2.a;
+					var definableType = _v2.b;
+					var description = _v2.c;
+					return _Utils_eq(name, mutationObjectName);
+				},
+				typeDefinitions);
+		} else {
+			return typeDefinitions;
+		}
+	});
+var $author$project$Graphql$Generator$Types$onlyQueries = F2(
+	function (_v0, typeDefinitions) {
+		var query = _v0.query;
+		return A2(
+			$elm$core$List$filter,
+			function (_v1) {
+				var name = _v1.a;
+				var definableType = _v1.b;
+				var description = _v1.c;
+				return _Utils_eq(name, query);
+			},
+			typeDefinitions);
 	});
 var $author$project$Graphql$Generator$Types$generate = function (_v0) {
 	var typeDefinitions = _v0.typeDefinitions;
@@ -7039,10 +7067,11 @@ var $author$project$Graphql$Generator$Types$generate = function (_v0) {
 				$author$project$Graphql$Generator$Types$excludeQuery,
 				context,
 				$author$project$Graphql$Generator$Types$excludeBuiltIns(typeDefinitions))));
-	return A2(
-		$elm$core$List$map,
-		$author$project$Graphql$Generator$Types$toViews(context),
-		$author$project$Graphql$Generator$Types$excludeBuiltIns(typeDefinitions));
+	return {
+		baseTypes: $author$project$Graphql$Generator$Types$excludeBuiltIns(typeDefinitions),
+		mutations: A2($author$project$Graphql$Generator$Types$onlyMutations, context, typeDefinitions),
+		queries: A2($author$project$Graphql$Generator$Types$onlyQueries, context, typeDefinitions)
+	};
 };
 var $elm$core$List$sortBy = _List_sortBy;
 var $elm$core$String$fromList = _String_fromList;
@@ -7270,17 +7299,13 @@ var $elm$http$Http$post = function (r) {
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
 var $elm$http$Http$stringBody = _Http_pair;
-var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$Main$runIntrospectionQuery = function (url) {
 	return $elm$http$Http$post(
 		{
 			body: A2($elm$http$Http$stringBody, 'application/json', $author$project$Main$introspectionQuery),
 			expect: A2(
 				$elm$http$Http$expectJson,
-				function (result) {
-					var str = $elm$core$Debug$toString(result);
-					return $author$project$Main$GotIntrospection(str);
-				},
+				$author$project$Main$GotIntrospection,
 				A2($elm$json$Json$Decode$field, 'data', $author$project$Graphql$Parser$decoder)),
 			url: url
 		});
@@ -7318,19 +7343,91 @@ var $author$project$Main$update = F2(
 						$author$project$Main$runIntrospectionQuery(config.graphqlEndpoint));
 				}
 			default:
-				var str = msg.a;
+				var apiInteractionsResult = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{
-							introspection: $elm$core$Maybe$Just(str)
-						}),
+						{introspection: apiInteractionsResult}),
 					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $author$project$Main$HitEndpoint = {$: 'HitEndpoint'};
-var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $elm$html$Html$li = _VirtualDom_node('li');
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$core$Debug$toString = _Debug_toString;
+var $elm$html$Html$ul = _VirtualDom_node('ul');
+var $author$project$Main$apiView = function (apiInteractions) {
+	var queries = A2(
+		$elm$core$List$map,
+		function (x) {
+			return A2(
+				$elm$html$Html$li,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(x)
+					]));
+		},
+		A2($elm$core$List$map, $elm$core$Debug$toString, apiInteractions.queries));
+	var mutations = A2(
+		$elm$core$List$map,
+		function (x) {
+			return A2(
+				$elm$html$Html$li,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(x)
+					]));
+		},
+		A2($elm$core$List$map, $elm$core$Debug$toString, apiInteractions.mutations));
+	var baseTypes = A2(
+		$elm$core$List$map,
+		function (x) {
+			return A2(
+				$elm$html$Html$li,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(x)
+					]));
+		},
+		A2($elm$core$List$map, $elm$core$Debug$toString, apiInteractions.baseTypes));
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$h1,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Queries')
+					])),
+				A2($elm$html$Html$ul, _List_Nil, queries),
+				A2(
+				$elm$html$Html$h1,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Mutations')
+					])),
+				A2($elm$html$Html$ul, _List_Nil, mutations),
+				A2(
+				$elm$html$Html$h1,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Base Types')
+					])),
+				A2($elm$html$Html$ul, _List_Nil, baseTypes)
+			]));
+};
+var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -7348,9 +7445,31 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $elm$html$Html$pre = _VirtualDom_node('pre');
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$Main$resultView = F2(
+	function (contentsView, result) {
+		if (result.$ === 'Err') {
+			var error = result.a;
+			switch (error.$) {
+				case 'BadUrl':
+					var str = error.a;
+					return $elm$html$Html$text('Bad Url: ' + str);
+				case 'Timeout':
+					return $elm$html$Html$text('Timeout');
+				case 'NetworkError':
+					return $elm$html$Html$text('Network Error');
+				case 'BadStatus':
+					var statusCode = error.a;
+					return $elm$html$Html$text(
+						'Bad Status. Status Code: ' + $elm$core$String$fromInt(statusCode));
+				default:
+					var str = error.a;
+					return $elm$html$Html$text('Bad Body: ' + str);
+			}
+		} else {
+			var contents = result.a;
+			return contentsView(contents);
+		}
+	});
 var $author$project$Main$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -7369,14 +7488,7 @@ var $author$project$Main$view = function (model) {
 					[
 						$elm$html$Html$text('Hit Endpoint')
 					])),
-				A2(
-				$elm$html$Html$pre,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$elm$html$Html$text(
-						A2($elm$core$Maybe$withDefault, 'Not Loaded', model.introspection))
-					]))
+				A2($author$project$Main$resultView, $author$project$Main$apiView, model.introspection)
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(

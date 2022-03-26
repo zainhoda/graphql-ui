@@ -6,7 +6,7 @@ import Graphql.Generator.Context exposing (Context)
 import Dict exposing (Dict)
 import Html exposing (..)
 
--- generate : IntrospectionData -> List String
+generate : IntrospectionData -> ApiInteractions
 generate { typeDefinitions, queryObjectName, mutationObjectName, subscriptionObjectName } =
     let
         context : Context
@@ -24,14 +24,17 @@ generate { typeDefinitions, queryObjectName, mutationObjectName, subscriptionObj
                 |> excludeMutation context
                 |> excludeSubscription context
     in
-        typeDefinitions
-            |> excludeBuiltIns
-            |> List.map (toViews context)
-                -- (\x -> 
-                --     case x of
-                --         Type.TypeDefinition classCaseName _ maybeDescription ->
-                --             Graphql.Parser.ClassCaseName.raw classCaseName 
-                -- )
+        { baseTypes = 
+            typeDefinitions
+                |> excludeBuiltIns        
+        , queries = 
+            typeDefinitions
+                |> onlyQueries context
+        , mutations =
+            typeDefinitions
+                |> onlyMutations context
+        }
+
 
 type alias IntrospectionData =
     { typeDefinitions : List Type.TypeDefinition
@@ -40,6 +43,11 @@ type alias IntrospectionData =
     , subscriptionObjectName : Maybe String
     }
 
+type alias ApiInteractions =
+    { baseTypes : List Type.TypeDefinition
+    , queries : List Type.TypeDefinition
+    , mutations : List Type.TypeDefinition
+    }
 
 sortedIntrospectionData : List Type.TypeDefinition -> String -> Maybe String -> Maybe String -> IntrospectionData
 sortedIntrospectionData typeDefinitions queryObjectName mutationObjectName subscriptionObjectName =
@@ -82,6 +90,11 @@ excludeQuery { query } typeDefinitions =
     typeDefinitions
         |> List.filter (\(Type.TypeDefinition name definableType description) -> name /= query)
 
+onlyQueries : Context -> List Type.TypeDefinition -> List Type.TypeDefinition
+onlyQueries { query } typeDefinitions =
+    typeDefinitions
+        |> List.filter (\(Type.TypeDefinition name definableType description) -> name == query)
+
 
 excludeMutation : Context -> List Type.TypeDefinition -> List Type.TypeDefinition
 excludeMutation { mutation } typeDefinitions =
@@ -93,6 +106,15 @@ excludeMutation { mutation } typeDefinitions =
         Nothing ->
             typeDefinitions
 
+onlyMutations : Context -> List Type.TypeDefinition -> List Type.TypeDefinition
+onlyMutations { mutation } typeDefinitions =
+    case mutation of
+        Just mutationObjectName ->
+            typeDefinitions
+                |> List.filter (\(Type.TypeDefinition name definableType description) -> name == mutationObjectName)
+
+        Nothing ->
+            typeDefinitions
 
 excludeSubscription : Context -> List Type.TypeDefinition -> List Type.TypeDefinition
 excludeSubscription { subscription } typeDefinitions =
@@ -108,9 +130,9 @@ toViews context ((Type.TypeDefinition name definableType description) as definit
     case definableType of
         Type.ObjectType fields ->
             if name == context.query then
-                "query: " ++ name
+                text <| "query: " ++ (Debug.toString name)
             else
-                "object: " ++ name
+                text <| "object: " ++ (Debug.toString name)
                 -- Graphql.Generator.Query.generate context moduleName fields
                 --     |> Just
 
@@ -145,5 +167,5 @@ toViews context ((Type.TypeDefinition name definableType description) as definit
         --     Nothing
 
         _ ->
-            name
+            text <| (Debug.toString name)
 

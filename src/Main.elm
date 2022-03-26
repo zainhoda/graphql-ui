@@ -9,6 +9,8 @@ import Json.Decode
 import GraphQl
 import GraphQl.Http
 import Graphql.Parser as Parser
+import Graphql.Generator.Types exposing (ApiInteractions)
+import Html.Attributes exposing (title)
 
 -- TYPES
 type alias ConfigURL = String
@@ -19,14 +21,14 @@ type alias Config =
 
 type alias Model = 
   { config: Maybe Config
-  , introspection: Maybe String
+  , introspection: Result Http.Error ApiInteractions
   }
 
 type Msg
   = NoOp
   | GotConfig (Result Http.Error Config)
   | HitEndpoint
-  | GotIntrospection String
+  | GotIntrospection (Result Http.Error ApiInteractions)
 
 -- MAIN
 
@@ -45,7 +47,7 @@ main =
 init : ConfigURL -> ( Model, Cmd Msg )
 init configURL =
   ( { config = Nothing
-    , introspection = Nothing
+    , introspection = Result.Err <| Http.BadUrl "Not Asked Yet -- TODO: Change this to another type"
     }
   , getConfig configURL
   )
@@ -74,8 +76,8 @@ update msg model =
         Just config ->
           (model, runIntrospectionQuery config.graphqlEndpoint)
 
-    GotIntrospection str ->
-      ( { model | introspection = Just str}, Cmd.none)
+    GotIntrospection apiInteractionsResult ->
+      ( { model | introspection = apiInteractionsResult}, Cmd.none)
 
 
 -- VIEW
@@ -85,9 +87,57 @@ view model =
   div []
       [ text (Debug.toString model.config)
       , button [Html.Events.onClick HitEndpoint ] [text "Hit Endpoint"]
-      , pre [] [text (Maybe.withDefault "Not Loaded" model.introspection)]
+      , resultView apiView model.introspection
       ]
 
+resultView : (a -> Html msg) -> Result Http.Error a -> Html msg
+resultView contentsView result  = 
+  case result of
+      Err error ->
+        case error of
+            Http.BadUrl str ->
+              text <| "Bad Url: " ++ str
+            
+            Http.Timeout ->
+              text "Timeout"
+
+            Http.NetworkError ->
+              text "Network Error"
+
+            Http.BadStatus statusCode ->
+              text <| "Bad Status. Status Code: " ++ (String.fromInt statusCode)
+            
+            Http.BadBody str ->
+              text <| "Bad Body: " ++ str
+
+      Ok contents ->
+        contentsView contents
+
+apiView : ApiInteractions -> Html Msg
+apiView apiInteractions = 
+  let queries =
+        apiInteractions.queries
+        |> List.map Debug.toString
+        |> List.map (\x -> li [] [ text x])
+      mutations =
+        apiInteractions.mutations
+        |> List.map Debug.toString
+        |> List.map (\x -> li [] [ text x])
+
+      baseTypes =
+        apiInteractions.baseTypes
+        |> List.map Debug.toString
+        |> List.map (\x -> li [] [ text x])
+
+  in
+    div []
+      [ h1 [] [text "Queries"]
+      , ul [] queries
+      , h1 [] [text "Mutations"]
+      , ul [] mutations
+      , h1 [] [text "Base Types"]
+      , ul [] baseTypes
+      ]
 
 -- SUBSCRIPTIONS
 
@@ -139,7 +189,7 @@ runIntrospectionQuery url =
   Http.post 
     { url = url
     , body = Http.stringBody "application/json" introspectionQuery 
-    , expect = Http.expectJson (\result -> let str = Debug.toString result in GotIntrospection str) (Json.Decode.field "data" Parser.decoder)
+    , expect = Http.expectJson GotIntrospection (Json.Decode.field "data" Parser.decoder)
     }
 
 
