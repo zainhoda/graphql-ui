@@ -11,6 +11,9 @@ import GraphQl.Http
 import Graphql.Parser as Parser
 import Graphql.Generator.Types exposing (ApiInteractions)
 import Html.Attributes exposing (title)
+import Graphql.Parser.Type as Type exposing (TypeDefinition)
+import Graphql.Parser.CamelCaseName as CamelCaseName
+import Graphql.Parser.CamelCaseName exposing (CamelCaseName)
 
 -- TYPES
 type alias ConfigURL = String
@@ -117,8 +120,7 @@ apiView : ApiInteractions -> Html Msg
 apiView apiInteractions = 
   let queries =
         apiInteractions.queries
-        |> List.map Debug.toString
-        |> List.map (\x -> li [] [ text x])
+        |> List.map typeView
       mutations =
         apiInteractions.mutations
         |> List.map Debug.toString
@@ -138,6 +140,61 @@ apiView apiInteractions =
       , h1 [] [text "Base Types"]
       , ul [] baseTypes
       ]
+
+typeView : TypeDefinition -> Html Msg
+typeView (Type.TypeDefinition name definableType description) =
+  case definableType of
+    Type.ScalarType ->
+      text "ScalarType"
+    
+    Type.ObjectType listOfField ->
+      listOfField
+        |> List.map objectFieldToString
+        |> List.map (\x -> li [] [text x])
+        |> ul []
+
+    _ ->
+      text "Not Implemented"
+    -- | InterfaceType (List Field) (List ClassCaseName)
+    -- | UnionType (List ClassCaseName)
+    -- | EnumType (List EnumValue)
+    -- | InputObjectType (List Field)
+
+objectFieldToString : Type.Field -> String
+objectFieldToString field =
+   (nameToString field.name)
+   ++ " - "
+   ++ (typeRefToString field.typeRef)
+   ++ " : "
+   ++ (List.map argToString field.args |> String.join ", ")
+
+nameToString : CamelCaseName -> String
+nameToString camelCaseName =
+  CamelCaseName.raw camelCaseName
+
+typeRefToString : Type.TypeReference -> String
+typeRefToString (Type.TypeReference referrableType isNullable) =
+  (case referrableType of
+      Type.Scalar scalar ->
+        (Debug.toString scalar)
+      _ ->
+        "TODO: TypeReference"
+  ) ++ " " ++ (nullableToString isNullable)
+
+nullableToString : Type.IsNullable -> String
+nullableToString isNullable =
+  case isNullable of
+      Type.Nullable ->
+        "(Nullable)"
+      
+      Type.NonNullable ->
+        "(Non-Nullable)"
+
+argToString : Type.Arg -> String
+argToString arg =
+  (nameToString arg.name)
+  ++ " - "
+  ++ (typeRefToString arg.typeRef)
 
 -- SUBSCRIPTIONS
 

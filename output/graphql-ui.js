@@ -7358,20 +7358,72 @@ var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$core$Debug$toString = _Debug_toString;
+var $author$project$Graphql$Parser$CamelCaseName$raw = function (_v0) {
+	var name = _v0.a;
+	return name;
+};
+var $author$project$Main$nameToString = function (camelCaseName) {
+	return $author$project$Graphql$Parser$CamelCaseName$raw(camelCaseName);
+};
+var $author$project$Main$nullableToString = function (isNullable) {
+	if (isNullable.$ === 'Nullable') {
+		return '(Nullable)';
+	} else {
+		return '(Non-Nullable)';
+	}
+};
+var $author$project$Main$typeRefToString = function (_v0) {
+	var referrableType = _v0.a;
+	var isNullable = _v0.b;
+	return function () {
+		if (referrableType.$ === 'Scalar') {
+			var scalar = referrableType.a;
+			return $elm$core$Debug$toString(scalar);
+		} else {
+			return 'TODO: TypeReference';
+		}
+	}() + (' ' + $author$project$Main$nullableToString(isNullable));
+};
+var $author$project$Main$argToString = function (arg) {
+	return $author$project$Main$nameToString(arg.name) + (' - ' + $author$project$Main$typeRefToString(arg.typeRef));
+};
+var $author$project$Main$objectFieldToString = function (field) {
+	return $author$project$Main$nameToString(field.name) + (' - ' + ($author$project$Main$typeRefToString(field.typeRef) + (' : ' + A2(
+		$elm$core$String$join,
+		', ',
+		A2($elm$core$List$map, $author$project$Main$argToString, field.args)))));
+};
 var $elm$html$Html$ul = _VirtualDom_node('ul');
-var $author$project$Main$apiView = function (apiInteractions) {
-	var queries = A2(
-		$elm$core$List$map,
-		function (x) {
+var $author$project$Main$typeView = function (_v0) {
+	var name = _v0.a;
+	var definableType = _v0.b;
+	var description = _v0.c;
+	switch (definableType.$) {
+		case 'ScalarType':
+			return $elm$html$Html$text('ScalarType');
+		case 'ObjectType':
+			var listOfField = definableType.a;
 			return A2(
-				$elm$html$Html$li,
+				$elm$html$Html$ul,
 				_List_Nil,
-				_List_fromArray(
-					[
-						$elm$html$Html$text(x)
-					]));
-		},
-		A2($elm$core$List$map, $elm$core$Debug$toString, apiInteractions.queries));
+				A2(
+					$elm$core$List$map,
+					function (x) {
+						return A2(
+							$elm$html$Html$li,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(x)
+								]));
+					},
+					A2($elm$core$List$map, $author$project$Main$objectFieldToString, listOfField)));
+		default:
+			return $elm$html$Html$text('Not Implemented');
+	}
+};
+var $author$project$Main$apiView = function (apiInteractions) {
+	var queries = A2($elm$core$List$map, $author$project$Main$typeView, apiInteractions.queries);
 	var mutations = A2(
 		$elm$core$List$map,
 		function (x) {
