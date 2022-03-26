@@ -18,23 +18,23 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Use the decoder from https://github.com/dillonkearns/elm-graphql/blob/master/generator/src/Graphql/Parser.elm#L13-L15
 
 ## Initial Models
-- [ ] Model Types
-- [ ] Model Queries
-- [ ] Model Mutations
+- [x] Model Types
+- [x] Model Queries
+- [x] Model Mutations
 
 ## Basic Functionality
 - [x] Hit GraphQL endpoint with a query using code from https://package.elm-lang.org/packages/ghivert/elm-graphql/latest/
-- [ ] List Queries
-- [ ] List Mutations
+- [x] List Queries
+- [x] List Mutations
+- [ ] Forms from Query/Mutation Arguments
+- [ ] Form fields to GraphQL Query/Mutation
 - [ ] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
-- [ ] Display output
-
-## Views
-- [ ] Tables
-- [ ] Forms
-- [ ] Others?
+- [ ] Tables/FieldViewer from Query Results
 
 ## Linking UI Elements
+- [ ] List (Tab, Form)
+- [ ] Maybe Form -> Query -> View
+- [ ] View -> Form
 - [ ] Fields -> DisplayView
 - [ ] DisplayView -> FormView population
 - [ ] FormView from Mutation Parameters
