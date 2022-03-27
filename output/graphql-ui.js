@@ -6232,7 +6232,10 @@ var $author$project$Main$init = function (configURL) {
 			config: $elm$core$Maybe$Nothing,
 			formInput: $elm$core$Dict$empty,
 			introspection: $elm$core$Result$Err(
-				$elm$http$Http$BadUrl('Not Asked Yet -- TODO: Change this to another type'))
+				$elm$http$Http$BadUrl('Not Asked Yet -- TODO: Change this to another type')),
+			mutations: $elm$core$Dict$empty,
+			queries: $elm$core$Dict$empty,
+			types: $elm$core$Dict$empty
 		},
 		$author$project$Main$getConfig(configURL));
 };
@@ -6240,6 +6243,106 @@ var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Main$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
+};
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $author$project$Graphql$Parser$CamelCaseName$raw = function (_v0) {
+	var name = _v0.a;
+	return name;
+};
+var $author$project$Main$nameToString = function (camelCaseName) {
+	return $author$project$Graphql$Parser$CamelCaseName$raw(camelCaseName);
+};
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $author$project$Main$apiInteractionsToFieldDict = F2(
+	function (res, queryOrMutation) {
+		if (res.$ === 'Err') {
+			return $elm$core$Dict$empty;
+		} else {
+			var contents = res.a;
+			return A2(
+				$elm$core$Maybe$withDefault,
+				$elm$core$Dict$empty,
+				A2(
+					$elm$core$Maybe$map,
+					function (x) {
+						var definableType = x.b;
+						if (definableType.$ === 'ObjectType') {
+							var listOfField = definableType.a;
+							return $elm$core$Dict$fromList(
+								A2(
+									$elm$core$List$map,
+									function (y) {
+										return _Utils_Tuple2(
+											$author$project$Main$nameToString(y.name),
+											y);
+									},
+									listOfField));
+						} else {
+							return $elm$core$Dict$empty;
+						}
+					},
+					$elm$core$List$head(
+						queryOrMutation(contents))));
+		}
+	});
+var $author$project$Graphql$Parser$ClassCaseName$raw = function (_v0) {
+	var rawName = _v0.a;
+	return rawName;
+};
+var $author$project$Main$apiInteractionsToTypeDict = function (res) {
+	if (res.$ === 'Err') {
+		return $elm$core$Dict$empty;
+	} else {
+		var contents = res.a;
+		return $elm$core$Dict$fromList(
+			A2(
+				$elm$core$List$map,
+				function (x) {
+					var classCaseName = x.a;
+					return _Utils_Tuple2(
+						$author$project$Graphql$Parser$ClassCaseName$raw(classCaseName),
+						x);
+				},
+				contents.baseTypes));
+	}
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -6969,22 +7072,6 @@ var $author$project$Graphql$Generator$Types$excludeSubscription = F2(
 			return typeDefinitions;
 		}
 	});
-var $elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		$elm$core$List$foldl,
-		F2(
-			function (_v0, dict) {
-				var key = _v0.a;
-				var value = _v0.b;
-				return A3($elm$core$Dict$insert, key, value, dict);
-			}),
-		$elm$core$Dict$empty,
-		assocs);
-};
-var $author$project$Graphql$Parser$ClassCaseName$raw = function (_v0) {
-	var rawName = _v0.a;
-	return rawName;
-};
 var $author$project$Graphql$Generator$Types$interfacePossibleTypesDict = function (typeDefs) {
 	return $elm$core$Dict$fromList(
 		A2(
@@ -7006,16 +7093,6 @@ var $author$project$Graphql$Generator$Types$interfacePossibleTypesDict = functio
 			},
 			typeDefs));
 };
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
 var $author$project$Graphql$Generator$Types$onlyMutations = F2(
 	function (_v0, typeDefinitions) {
 		var mutation = _v0.mutation;
@@ -7111,15 +7188,6 @@ var $elm$regex$Regex$fromString = function (string) {
 		string);
 };
 var $elm$regex$Regex$never = _Regex_never;
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
 var $elm_community$string_extra$String$Extra$regexFromString = A2(
 	$elm$core$Basics$composeR,
 	$elm$regex$Regex$fromString,
@@ -7190,15 +7258,6 @@ var $author$project$Graphql$Parser$Normalize$isAllUpper = function (string) {
 };
 var $elm$core$String$toLower = _String_toLower;
 var $elm$regex$Regex$find = _Regex_findAtMost(_Regex_infinity);
-var $elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(x);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
 var $author$project$Graphql$Parser$Normalize$underscores = function (string) {
 	var regexFromString = A2(
 		$elm$core$Basics$composeR,
@@ -7673,7 +7732,22 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{introspection: apiInteractionsResult}),
+						{
+							introspection: apiInteractionsResult,
+							mutations: A2(
+								$author$project$Main$apiInteractionsToFieldDict,
+								apiInteractionsResult,
+								function ($) {
+									return $.mutations;
+								}),
+							queries: A2(
+								$author$project$Main$apiInteractionsToFieldDict,
+								apiInteractionsResult,
+								function ($) {
+									return $.queries;
+								}),
+							types: $author$project$Main$apiInteractionsToTypeDict(apiInteractionsResult)
+						}),
 					$elm$core$Platform$Cmd$none);
 			case 'UpdateFormInput':
 				var formName = msg.a;
@@ -7722,13 +7796,6 @@ var $author$project$Main$UpdateFormInput = F3(
 	});
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$label = _VirtualDom_node('label');
-var $author$project$Graphql$Parser$CamelCaseName$raw = function (_v0) {
-	var name = _v0.a;
-	return name;
-};
-var $author$project$Main$nameToString = function (camelCaseName) {
-	return $author$project$Graphql$Parser$CamelCaseName$raw(camelCaseName);
-};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -7826,6 +7893,8 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
+var $elm$html$Html$pre = _VirtualDom_node('pre');
+var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$Main$fieldTypeToForm = function (fieldType) {
 	return A2(
 		$elm$html$Html$div,
@@ -7849,46 +7918,46 @@ var $author$project$Main$fieldTypeToForm = function (fieldType) {
 					$author$project$Main$argToFormField(
 						$author$project$Main$nameToString(fieldType.name)),
 					fieldType.args),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('button is-small is-success'),
-								$elm$html$Html$Events$onClick(
-								$author$project$Main$SubmitForm(
-									$author$project$Main$nameToString(fieldType.name)))
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Submit')
-							]))
-					]))));
-};
-var $author$project$Main$formView = function (_v0) {
-	var name = _v0.a;
-	var definableType = _v0.b;
-	var description = _v0.c;
-	switch (definableType.$) {
-		case 'ScalarType':
-			return $elm$html$Html$text('ScalarType');
-		case 'ObjectType':
-			var listOfField = definableType.a;
-			return A2(
-				$elm$html$Html$div,
-				_List_Nil,
-				A2($elm$core$List$map, $author$project$Main$fieldTypeToForm, listOfField));
-		default:
-			return $elm$html$Html$text('Not Implemented');
-	}
+				_Utils_ap(
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$pre,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									$elm$core$Debug$toString(fieldType.typeRef))
+								]))
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$button,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('button is-small is-success'),
+									$elm$html$Html$Events$onClick(
+									$author$project$Main$SubmitForm(
+										$author$project$Main$nameToString(fieldType.name)))
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Run Query')
+								]))
+						])))));
 };
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$li = _VirtualDom_node('li');
-var $elm$core$Debug$toString = _Debug_toString;
 var $elm$html$Html$ul = _VirtualDom_node('ul');
-var $author$project$Main$apiView = function (apiInteractions) {
-	var queries = A2($elm$core$List$map, $author$project$Main$formView, apiInteractions.queries);
+var $author$project$Main$apiView = function (model) {
+	var queries = A2(
+		$elm$core$List$map,
+		function (_v0) {
+			var queryField = _v0.b;
+			return $author$project$Main$fieldTypeToForm(queryField);
+		},
+		$elm$core$Dict$toList(model.queries));
 	var mutations = A2(
 		$elm$core$List$map,
 		function (x) {
@@ -7900,7 +7969,10 @@ var $author$project$Main$apiView = function (apiInteractions) {
 						$elm$html$Html$text(x)
 					]));
 		},
-		A2($elm$core$List$map, $elm$core$Debug$toString, apiInteractions.mutations));
+		A2(
+			$elm$core$List$map,
+			$elm$core$Debug$toString,
+			$elm$core$Dict$toList(model.mutations)));
 	var baseTypes = A2(
 		$elm$core$List$map,
 		function (x) {
@@ -7912,7 +7984,10 @@ var $author$project$Main$apiView = function (apiInteractions) {
 						$elm$html$Html$text(x)
 					]));
 		},
-		A2($elm$core$List$map, $elm$core$Debug$toString, apiInteractions.baseTypes));
+		A2(
+			$elm$core$List$map,
+			$elm$core$Debug$toString,
+			$elm$core$Dict$toList(model.types)));
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
@@ -7953,32 +8028,30 @@ var $author$project$Main$apiView = function (apiInteractions) {
 				A2($elm$html$Html$ul, _List_Nil, baseTypes)
 			]));
 };
-var $elm$html$Html$pre = _VirtualDom_node('pre');
-var $author$project$Main$resultView = F2(
-	function (contentsView, result) {
-		if (result.$ === 'Err') {
-			var error = result.a;
-			switch (error.$) {
-				case 'BadUrl':
-					var str = error.a;
-					return $elm$html$Html$text('Bad Url: ' + str);
-				case 'Timeout':
-					return $elm$html$Html$text('Timeout');
-				case 'NetworkError':
-					return $elm$html$Html$text('Network Error');
-				case 'BadStatus':
-					var statusCode = error.a;
-					return $elm$html$Html$text(
-						'Bad Status. Status Code: ' + $elm$core$String$fromInt(statusCode));
-				default:
-					var str = error.a;
-					return $elm$html$Html$text('Bad Body: ' + str);
-			}
-		} else {
-			var contents = result.a;
-			return contentsView(contents);
+var $author$project$Main$errorView = function (result) {
+	if (result.$ === 'Err') {
+		var error = result.a;
+		switch (error.$) {
+			case 'BadUrl':
+				var str = error.a;
+				return $elm$html$Html$text('Bad Url: ' + str);
+			case 'Timeout':
+				return $elm$html$Html$text('Timeout');
+			case 'NetworkError':
+				return $elm$html$Html$text('Network Error');
+			case 'BadStatus':
+				var statusCode = error.a;
+				return $elm$html$Html$text(
+					'Bad Status. Status Code: ' + $elm$core$String$fromInt(statusCode));
+			default:
+				var str = error.a;
+				return $elm$html$Html$text('Bad Body: ' + str);
 		}
-	});
+	} else {
+		var contents = result.a;
+		return $elm$html$Html$text('');
+	}
+};
 var $author$project$Main$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -8015,7 +8088,8 @@ var $author$project$Main$view = function (model) {
 					[
 						$elm$html$Html$text('Introspect!')
 					])),
-				A2($author$project$Main$resultView, $author$project$Main$apiView, model.introspection)
+				$author$project$Main$errorView(model.introspection),
+				$author$project$Main$apiView(model)
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(

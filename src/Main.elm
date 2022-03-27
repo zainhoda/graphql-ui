@@ -14,6 +14,7 @@ import Html.Attributes exposing (title)
 import Graphql.Parser.Type as Type exposing (TypeDefinition)
 import Graphql.Parser.CamelCaseName as CamelCaseName
 import Graphql.Parser.CamelCaseName exposing (CamelCaseName)
+import Graphql.Parser.ClassCaseName
 import Html.Attributes exposing (class)
 import Graphql.Parser.Type exposing (IsNullable)
 import Graphql.Parser.Type exposing (IsNullable(..))
@@ -31,6 +32,9 @@ type alias Config =
 type alias Model = 
   { config: Maybe Config
   , introspection: Result Http.Error ApiInteractions
+  , queries: Dict.Dict String Type.Field
+  , mutations: Dict.Dict String Type.Field
+  , types: Dict.Dict String Type.TypeDefinition
   , formInput: Dict.Dict String (Dict.Dict String String)
   }
 
@@ -60,6 +64,9 @@ init : ConfigURL -> ( Model, Cmd Msg )
 init configURL =
   ( { config = Nothing
     , introspection = Result.Err <| Http.BadUrl "Not Asked Yet -- TODO: Change this to another type"
+    , queries = Dict.empty
+    , mutations = Dict.empty
+    , types = Dict.empty
     , formInput = Dict.empty
     }
   , getConfig configURL
@@ -90,7 +97,14 @@ update msg model =
           (model, runIntrospectionQuery config.graphqlEndpoint)
 
     GotIntrospection apiInteractionsResult ->
-      ( { model | introspection = apiInteractionsResult}, Cmd.none)
+      ( { model 
+        | introspection = apiInteractionsResult
+        , queries = apiInteractionsToFieldDict apiInteractionsResult .queries
+        , mutations = apiInteractionsToFieldDict apiInteractionsResult .mutations
+        , types = apiInteractionsToTypeDict apiInteractionsResult
+        }
+      , Cmd.none
+      )
 
     UpdateFormInput formName formField formValue ->
       ( { model 
@@ -108,6 +122,49 @@ update msg model =
     SubmitForm formName ->
       ( model, submitForm model formName)
 
+apiInteractionsToFieldDict : Result Http.Error ApiInteractions -> (ApiInteractions -> List Type.TypeDefinition) -> Dict.Dict String Type.Field
+apiInteractionsToFieldDict res queryOrMutation =
+  case res of
+      Err _ ->
+        Dict.empty
+      
+      Ok contents ->
+        contents
+        |> queryOrMutation
+        |> List.head
+        |> Maybe.map 
+          (\x ->
+            case x of
+                -- This type is "Query" and it should only contain an ObjectType with a list of fields
+                Type.TypeDefinition _ definableType _ -> 
+                  case definableType of
+                    Type.ObjectType listOfField ->
+                      listOfField
+                      |> List.map 
+                          (\y ->
+                            (nameToString y.name, y)
+                          )
+                      |> Dict.fromList
+                    _ ->
+                      Dict.empty
+          )
+        |> Maybe.withDefault Dict.empty
+
+apiInteractionsToTypeDict : Result Http.Error ApiInteractions -> Dict.Dict String Type.TypeDefinition
+apiInteractionsToTypeDict res =
+  case res of
+      Err _ ->
+        Dict.empty
+      
+      Ok contents ->
+        contents.baseTypes
+        |> List.map 
+            (\x -> 
+              case x of
+                Type.TypeDefinition classCaseName _ _ ->
+                  (Graphql.Parser.ClassCaseName.raw classCaseName, x)
+            )
+        |> Dict.fromList
 
 -- VIEW
 
@@ -117,11 +174,12 @@ view model =
       [ pre [] [text (Debug.toString model.config)]
       , pre [] [text (Debug.toString model.formInput)]
       , button [Html.Attributes.class "button is-large is-success" , Html.Events.onClick HitEndpoint ] [text "Introspect!"]
-      , resultView apiView model.introspection
+      , errorView model.introspection
+      , apiView model
       ]
 
-resultView : (a -> Html msg) -> Result Http.Error a -> Html msg
-resultView contentsView result  = 
+errorView : Result Http.Error a -> Html msg
+errorView result  = 
   case result of
       Err error ->
         case error of
@@ -141,20 +199,23 @@ resultView contentsView result  =
               text <| "Bad Body: " ++ str
 
       Ok contents ->
-        contentsView contents
+        text ""
 
-apiView : ApiInteractions -> Html Msg
-apiView apiInteractions = 
+apiView : Model -> Html Msg
+apiView model = 
   let queries =
-        apiInteractions.queries
-        |> List.map formView
+        model.queries
+        |> Dict.toList
+        |> List.map (\(_, queryField) -> fieldTypeToForm queryField)
       mutations =
-        apiInteractions.mutations
+        model.mutations
+        |> Dict.toList
         |> List.map Debug.toString
         |> List.map (\x -> li [] [ text x])
 
       baseTypes =
-        apiInteractions.baseTypes
+        model.types
+        |> Dict.toList
         |> List.map Debug.toString
         |> List.map (\x -> li [] [ text x])
 
@@ -167,20 +228,6 @@ apiView apiInteractions =
       , h1 [Html.Attributes.class "title"] [text "Base Types"]
       , ul [] baseTypes
       ]
-
-formView : Type.TypeDefinition -> Html Msg
-formView (Type.TypeDefinition name definableType description) = 
-  case definableType of
-    Type.ScalarType ->
-      text "ScalarType"
-    
-    Type.ObjectType listOfField ->
-      listOfField
-        |> List.map fieldTypeToForm
-        |> div []
-
-    _ ->
-      text "Not Implemented"
 
 typeView : TypeDefinition -> Html Msg
 typeView (Type.TypeDefinition name definableType description) =
@@ -237,7 +284,8 @@ fieldTypeToForm fieldType =
     (
       ( h2 [Html.Attributes.class "subtitle"] [text (nameToString fieldType.name) ] ) ::
       (List.map (argToFormField (nameToString fieldType.name)) fieldType.args) ++
-      [ button [ Html.Attributes.class "button is-small is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name)) ] [text "Submit"] ]
+      [ pre [] [text (Debug.toString fieldType.typeRef)] ] ++
+      [ button [ Html.Attributes.class "button is-small is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name)) ] [text "Run Query"] ]
     )
 
 argToFormField : String -> Type.Arg -> Html Msg
@@ -254,12 +302,6 @@ argToFormField formName arg =
               ] [] 
       ]
     ]
---   <div class="field">
---   <label class="label">Name</label>
---   <div class="control">
---     <input class="input" type="text" placeholder="Text input">
---   </div>
--- </div>
 
 nullableField : Type.IsNullable -> Html Msg
 nullableField isNullable =
@@ -358,6 +400,32 @@ submitForm model formName =
       
       Just config ->
         sendRequest config.graphqlEndpoint request
+
+-- getTypeRefFromQuery : Model -> String -> Maybe Type.TypeReference
+-- getTypeRefFromQuery model formName =
+--   case model.introspection of
+--       Err _ ->
+--         Nothing
+      
+--       Just apiInteractions ->
+--         apiInteractions.queries
+--         |> List.map
+--             (\(Type.TypeDefinition _ definableType _ ) -> 
+--               case definableType of
+--                   Type.ObjectType listOfField ->
+--                     listOfField
+--                     |> List.filterMap 
+--                       (\x -> 
+--                         if nameToString x.name == formName then
+--                           Just x.typeRef
+--                         else
+--                           Nothing
+--                       )
+--                     |> List.head
+
+--                   _ ->
+--                     Nothing
+--             ) 
 
 -- CONSTS
 
