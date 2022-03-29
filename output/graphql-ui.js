@@ -6229,6 +6229,7 @@ var $author$project$Main$getConfig = function (configURL) {
 var $author$project$Main$init = function (configURL) {
 	return _Utils_Tuple2(
 		{
+			activeForm: $elm$core$Maybe$Nothing,
 			config: $elm$core$Maybe$Nothing,
 			formInput: $elm$core$Dict$empty,
 			introspection: $elm$core$Result$Err(
@@ -7770,11 +7771,18 @@ var $author$project$Main$update = F2(
 							}()
 						}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'SubmitForm':
 				var formName = msg.a;
 				return _Utils_Tuple2(
 					model,
 					A2($author$project$Main$submitForm, model, formName));
+			default:
+				var maybeForm = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{activeForm: maybeForm}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $author$project$Main$HitEndpoint = {$: 'HitEndpoint'};
@@ -7787,6 +7795,45 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $author$project$Main$SetActiveForm = function (a) {
+	return {$: 'SetActiveForm', a: a};
+};
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$Main$fieldTypeToButton = function (fieldType) {
+	var formName = $author$project$Main$nameToString(fieldType.name);
+	return A2(
+		$elm$html$Html$button,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('button'),
+				$elm$html$Html$Events$onClick(
+				$author$project$Main$SetActiveForm(
+					$elm$core$Maybe$Just(formName)))
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(formName)
+			]));
+};
 var $author$project$Main$SubmitForm = function (a) {
 	return {$: 'SubmitForm', a: a};
 };
@@ -7802,7 +7849,6 @@ var $elm$html$Html$Events$alwaysStop = function (x) {
 var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
 	return {$: 'MayStopPropagation', a: a};
 };
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var $elm$html$Html$Events$stopPropagationOn = F2(
 	function (event, decoder) {
 		return A2(
@@ -7825,8 +7871,6 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $author$project$Main$argToFormField = F2(
 	function (formName, arg) {
@@ -7875,77 +7919,133 @@ var $author$project$Main$argToFormField = F2(
 						]))
 				]));
 	});
-var $elm$html$Html$button = _VirtualDom_node('button');
-var $elm$html$Html$h2 = _VirtualDom_node('h2');
-var $elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var $elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var $elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		$elm$html$Html$Events$on,
-		'click',
-		$elm$json$Json$Decode$succeed(msg));
-};
 var $elm$html$Html$pre = _VirtualDom_node('pre');
 var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$Main$fieldTypeToForm = function (fieldType) {
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
-		A2(
-			$elm$core$List$cons,
+		_Utils_ap(
 			A2(
-				$elm$html$Html$h2,
+				$elm$core$List$map,
+				$author$project$Main$argToFormField(
+					$author$project$Main$nameToString(fieldType.name)),
+				fieldType.args),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$pre,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(
+							$elm$core$Debug$toString(fieldType.typeRef))
+						]))
+				])));
+};
+var $elm$html$Html$footer = _VirtualDom_node('footer');
+var $elm$html$Html$header = _VirtualDom_node('header');
+var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$html$Html$section = _VirtualDom_node('section');
+var $author$project$Main$formModal = function (fieldType) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('modal is-active')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('subtitle')
+						$elm$html$Html$Attributes$class('modal-background')
+					]),
+				_List_Nil),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('modal-card')
 					]),
 				_List_fromArray(
 					[
-						$elm$html$Html$text(
-						$author$project$Main$nameToString(fieldType.name))
-					])),
-			_Utils_ap(
-				A2(
-					$elm$core$List$map,
-					$author$project$Main$argToFormField(
-						$author$project$Main$nameToString(fieldType.name)),
-					fieldType.args),
-				_Utils_ap(
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$pre,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(
-									$elm$core$Debug$toString(fieldType.typeRef))
-								]))
-						]),
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$button,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('button is-small is-success'),
-									$elm$html$Html$Events$onClick(
-									$author$project$Main$SubmitForm(
-										$author$project$Main$nameToString(fieldType.name)))
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text('Run Query')
-								]))
-						])))));
+						A2(
+						$elm$html$Html$header,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('modal-card-head')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$p,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('modal-card-title')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										$author$project$Main$nameToString(fieldType.name))
+									])),
+								A2(
+								$elm$html$Html$button,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('delete'),
+										$elm$html$Html$Events$onClick(
+										$author$project$Main$SetActiveForm($elm$core$Maybe$Nothing))
+									]),
+								_List_Nil)
+							])),
+						A2(
+						$elm$html$Html$section,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('modal-card-body')
+							]),
+						_List_fromArray(
+							[
+								$author$project$Main$fieldTypeToForm(fieldType)
+							])),
+						A2(
+						$elm$html$Html$footer,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('modal-card-foot')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$button,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('button is-success'),
+										$elm$html$Html$Events$onClick(
+										$author$project$Main$SubmitForm(
+											$author$project$Main$nameToString(fieldType.name)))
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Run Query')
+									])),
+								A2(
+								$elm$html$Html$button,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('button'),
+										$elm$html$Html$Events$onClick(
+										$author$project$Main$SetActiveForm($elm$core$Maybe$Nothing))
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Cancel')
+									]))
+							]))
+					]))
+			]));
 };
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$li = _VirtualDom_node('li');
@@ -7955,7 +8055,7 @@ var $author$project$Main$apiView = function (model) {
 		$elm$core$List$map,
 		function (_v0) {
 			var queryField = _v0.b;
-			return $author$project$Main$fieldTypeToForm(queryField);
+			return $author$project$Main$fieldTypeToButton(queryField);
 		},
 		$elm$core$Dict$toList(model.queries));
 	var mutations = A2(
@@ -7973,6 +8073,21 @@ var $author$project$Main$apiView = function (model) {
 			$elm$core$List$map,
 			$elm$core$Debug$toString,
 			$elm$core$Dict$toList(model.mutations)));
+	var maybeForm = A2(
+		$elm$core$Maybe$withDefault,
+		$elm$html$Html$text(''),
+		A2(
+			$elm$core$Maybe$map,
+			function (activeForm) {
+				return A2(
+					$elm$core$Maybe$withDefault,
+					$elm$html$Html$text('Something went wrong -- the activeForm wasn\'t found in the queries'),
+					A2(
+						$elm$core$Maybe$map,
+						$author$project$Main$formModal,
+						A2($elm$core$Dict$get, activeForm, model.queries)));
+			},
+			model.activeForm));
 	var baseTypes = A2(
 		$elm$core$List$map,
 		function (x) {
@@ -7993,6 +8108,7 @@ var $author$project$Main$apiView = function (model) {
 		_List_Nil,
 		_List_fromArray(
 			[
+				maybeForm,
 				A2(
 				$elm$html$Html$h1,
 				_List_fromArray(

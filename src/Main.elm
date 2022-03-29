@@ -10,17 +10,16 @@ import GraphQl
 import GraphQl.Http
 import Graphql.Parser as Parser
 import Graphql.Generator.Types exposing (ApiInteractions)
-import Html.Attributes exposing (title)
+import Html.Attributes
 import Graphql.Parser.Type as Type exposing (TypeDefinition)
 import Graphql.Parser.CamelCaseName as CamelCaseName
 import Graphql.Parser.CamelCaseName exposing (CamelCaseName)
 import Graphql.Parser.ClassCaseName
-import Html.Attributes exposing (class)
+import Html.Attributes
 import Graphql.Parser.Type exposing (IsNullable)
 import Graphql.Parser.Type exposing (IsNullable(..))
 import Dict
-import Dict.Extra
-import Graphql.Parser.Type exposing (Field)
+import Html.Attributes exposing (class)
 
 -- TYPES
 type alias ConfigURL = String
@@ -36,6 +35,7 @@ type alias Model =
   , mutations: Dict.Dict String Type.Field
   , types: Dict.Dict String Type.TypeDefinition
   , formInput: Dict.Dict String (Dict.Dict String String)
+  , activeForm: Maybe String
   }
 
 type Msg
@@ -45,6 +45,7 @@ type Msg
   | GotIntrospection (Result Http.Error ApiInteractions)
   | UpdateFormInput String String String
   | SubmitForm String
+  | SetActiveForm (Maybe String)
 
 -- MAIN
 
@@ -68,6 +69,7 @@ init configURL =
     , mutations = Dict.empty
     , types = Dict.empty
     , formInput = Dict.empty
+    , activeForm = Nothing
     }
   , getConfig configURL
   )
@@ -121,6 +123,9 @@ update msg model =
     
     SubmitForm formName ->
       ( model, submitForm model formName)
+
+    SetActiveForm maybeForm ->
+      ( {model | activeForm = maybeForm }, Cmd.none)
 
 apiInteractionsToFieldDict : Result Http.Error ApiInteractions -> (ApiInteractions -> List Type.TypeDefinition) -> Dict.Dict String Type.Field
 apiInteractionsToFieldDict res queryOrMutation =
@@ -206,7 +211,18 @@ apiView model =
   let queries =
         model.queries
         |> Dict.toList
-        |> List.map (\(_, queryField) -> fieldTypeToForm queryField)
+        |> List.map (\(_, queryField) -> fieldTypeToButton queryField)
+
+      maybeForm =
+        model.activeForm
+        |> Maybe.map 
+          (\activeForm ->
+            model.queries
+            |> Dict.get activeForm
+            |> Maybe.map formModal
+            |> Maybe.withDefault (text "Something went wrong -- the activeForm wasn't found in the queries")
+          )
+        |> Maybe.withDefault (text "")
       mutations =
         model.mutations
         |> Dict.toList
@@ -221,7 +237,8 @@ apiView model =
 
   in
     div []
-      [ h1 [Html.Attributes.class "title"] [text "Queries"]
+      [ maybeForm
+      , h1 [Html.Attributes.class "title"] [text "Queries"]
       , ul [] queries
       , h1 [Html.Attributes.class "title"] [text "Mutations"]
       , ul [] mutations
@@ -278,15 +295,45 @@ nullableToString isNullable =
       Type.NonNullable ->
         "(Non-Nullable)"
 
+fieldTypeToButton : Type.Field -> Html Msg
+fieldTypeToButton fieldType =
+  let formName = (nameToString fieldType.name)
+  in
+    button 
+      [ class "button"
+      , Html.Events.onClick (SetActiveForm (Just formName))
+      ] 
+      [text formName]
+
 fieldTypeToForm : Type.Field -> Html Msg
 fieldTypeToForm fieldType =
   div [] 
     (
-      ( h2 [Html.Attributes.class "subtitle"] [text (nameToString fieldType.name) ] ) ::
       (List.map (argToFormField (nameToString fieldType.name)) fieldType.args) ++
-      [ pre [] [text (Debug.toString fieldType.typeRef)] ] ++
-      [ button [ Html.Attributes.class "button is-small is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name)) ] [text "Run Query"] ]
+      [ pre [] [text (Debug.toString fieldType.typeRef)] ]
     )
+
+formModal : Type.Field -> Html Msg
+formModal fieldType = 
+  div [ class "modal is-active" ]
+      [ div [ class "modal-background" ]
+          []
+      , div [ class "modal-card" ]
+          [ header [ class "modal-card-head" ]
+              [ p [ class "modal-card-title" ]
+                  [ text (nameToString fieldType.name) ]
+              , button [ class "delete", Html.Events.onClick (SetActiveForm Nothing) ]
+                  []
+              ]
+          , section [ class "modal-card-body" ]
+              [ fieldTypeToForm fieldType ]
+          , footer [ class "modal-card-foot" ]
+              [ button [ Html.Attributes.class "button is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name)) ] [text "Run Query"]
+              , button [ class "button", Html.Events.onClick (SetActiveForm Nothing) ]
+                  [ text "Cancel" ]
+              ]
+          ]
+      ]
 
 argToFormField : String -> Type.Arg -> Html Msg
 argToFormField formName arg =
@@ -400,6 +447,11 @@ submitForm model formName =
       
       Just config ->
         sendRequest config.graphqlEndpoint request
+
+-- Get fields from query
+-- formName -> model -> typeRef
+-- typeRef -> model -> GraphQl.Field a -> GraphQl.Field a 
+--    i.e. this will do nested GraphQl.withSelectors and GraphQl.field
 
 -- getTypeRefFromQuery : Model -> String -> Maybe Type.TypeReference
 -- getTypeRefFromQuery model formName =
