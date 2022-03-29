@@ -7624,6 +7624,125 @@ var $ghivert$elm_graphql$GraphQl$Argument = function (a) {
 };
 var $ghivert$elm_graphql$Helpers$betweenQuotes = $ghivert$elm_graphql$Helpers$between('\"');
 var $ghivert$elm_graphql$GraphQl$string = A2($elm$core$Basics$composeR, $ghivert$elm_graphql$Helpers$betweenQuotes, $ghivert$elm_graphql$GraphQl$Argument);
+var $author$project$Main$typeRefIsNested = function (_v0) {
+	typeRefIsNested:
+	while (true) {
+		var referrableType = _v0.a;
+		var isNullable = _v0.b;
+		switch (referrableType.$) {
+			case 'Scalar':
+				return false;
+			case 'List':
+				var typeRef = referrableType.a;
+				var $temp$_v0 = typeRef;
+				_v0 = $temp$_v0;
+				continue typeRefIsNested;
+			case 'EnumRef':
+				return false;
+			case 'ObjectRef':
+				return true;
+			case 'InputObjectRef':
+				return true;
+			case 'UnionRef':
+				return true;
+			default:
+				return true;
+		}
+	}
+};
+var $ghivert$elm_graphql$GraphQl$withSelectors = F2(
+	function (selectors, value) {
+		return A2($ghivert$elm_graphql$GraphQl$Field$addSelectorsIn, value, selectors);
+	});
+var $author$project$Main$typeDefToSelectors = F4(
+	function (depth, dictTypeDef, _v5, gqlField) {
+		var classCaseName = _v5.a;
+		var definableType = _v5.b;
+		return function () {
+			switch (definableType.$) {
+				case 'ScalarType':
+					return function (x) {
+						return x;
+					};
+				case 'ObjectType':
+					var listOfField = definableType.a;
+					return $ghivert$elm_graphql$GraphQl$withSelectors(
+						A2(
+							$elm$core$List$filterMap,
+							A2($author$project$Main$typeFieldToGraphQlField, depth + 1, dictTypeDef),
+							listOfField));
+				default:
+					return $ghivert$elm_graphql$GraphQl$withSelectors(
+						_List_fromArray(
+							[
+								$ghivert$elm_graphql$GraphQl$field('id')
+							]));
+			}
+		}()(gqlField);
+	});
+var $author$project$Main$typeFieldToGraphQlField = F3(
+	function (depth, dictTypeDef, typeField) {
+		var _v2 = A2($elm$core$Debug$log, 'depth', depth);
+		var _v3 = A2($elm$core$Debug$log, 'typeField.name', typeField.name);
+		var _v4 = A2(
+			$elm$core$Debug$log,
+			'typeRefIsNested typeField.typeRef',
+			$author$project$Main$typeRefIsNested(typeField.typeRef));
+		return ((depth <= 2) || ((depth <= 3) && (!$author$project$Main$typeRefIsNested(typeField.typeRef)))) ? $elm$core$Maybe$Just(
+			A4(
+				$author$project$Main$typeRefToSelectors,
+				depth,
+				dictTypeDef,
+				typeField.typeRef,
+				$ghivert$elm_graphql$GraphQl$field(
+					$author$project$Main$nameToString(typeField.name)))) : $elm$core$Maybe$Nothing;
+	});
+var $author$project$Main$typeRefToSelectors = F4(
+	function (depth, dictTypeDef, _v0, gqlField) {
+		var referrableType = _v0.a;
+		var isNullable = _v0.b;
+		return function () {
+			switch (referrableType.$) {
+				case 'Scalar':
+					var scalar = referrableType.a;
+					return function (x) {
+						return x;
+					};
+				case 'List':
+					var typeRef = referrableType.a;
+					return A3($author$project$Main$typeRefToSelectors, depth, dictTypeDef, typeRef);
+				case 'EnumRef':
+					var className = referrableType.a;
+					return function (x) {
+						return x;
+					};
+				case 'ObjectRef':
+					var objectName = referrableType.a;
+					return A2(
+						$elm$core$Maybe$withDefault,
+						function (x) {
+							return x;
+						},
+						A2(
+							$elm$core$Maybe$map,
+							A2($author$project$Main$typeDefToSelectors, depth, dictTypeDef),
+							A2($elm$core$Dict$get, objectName, dictTypeDef)));
+				case 'UnionRef':
+					var unionName = referrableType.a;
+					return $ghivert$elm_graphql$GraphQl$withSelectors(
+						_List_fromArray(
+							[
+								$ghivert$elm_graphql$GraphQl$field('__typename')
+							]));
+				default:
+					return $ghivert$elm_graphql$GraphQl$withSelectors(
+						_List_fromArray(
+							[
+								$ghivert$elm_graphql$GraphQl$field('id')
+							]));
+			}
+		}()(gqlField);
+	});
 var $ghivert$elm_graphql$GraphQl$Field$setArguments = F2(
 	function (_arguments, _v0) {
 		var value = _v0.a;
@@ -7648,12 +7767,8 @@ var $ghivert$elm_graphql$GraphQl$withArgument = F3(
 			_Utils_Tuple2(name, content),
 			value);
 	});
-var $ghivert$elm_graphql$GraphQl$withSelectors = F2(
-	function (selectors, value) {
-		return A2($ghivert$elm_graphql$GraphQl$Field$addSelectorsIn, value, selectors);
-	});
-var $author$project$Main$submitForm = F2(
-	function (model, formName) {
+var $author$project$Main$submitForm = F3(
+	function (model, formName, typeRef) {
 		var formValues = $elm$core$Dict$toList(
 			A2(
 				$elm$core$Maybe$withDefault,
@@ -7679,12 +7794,11 @@ var $author$project$Main$submitForm = F2(
 		var request = $ghivert$elm_graphql$GraphQl$object(
 			_List_fromArray(
 				[
-					A2(
-					$ghivert$elm_graphql$GraphQl$withSelectors,
-					_List_fromArray(
-						[
-							$ghivert$elm_graphql$GraphQl$field('id')
-						]),
+					A4(
+					$author$project$Main$typeRefToSelectors,
+					0,
+					model.types,
+					typeRef,
 					addArguments(
 						$ghivert$elm_graphql$GraphQl$field(formName)))
 				]));
@@ -7773,9 +7887,10 @@ var $author$project$Main$update = F2(
 					$elm$core$Platform$Cmd$none);
 			case 'SubmitForm':
 				var formName = msg.a;
+				var typeRef = msg.b;
 				return _Utils_Tuple2(
 					model,
-					A2($author$project$Main$submitForm, model, formName));
+					A3($author$project$Main$submitForm, model, formName, typeRef));
 			default:
 				var maybeForm = msg.a;
 				return _Utils_Tuple2(
@@ -7834,9 +7949,10 @@ var $author$project$Main$fieldTypeToButton = function (fieldType) {
 				$elm$html$Html$text(formName)
 			]));
 };
-var $author$project$Main$SubmitForm = function (a) {
-	return {$: 'SubmitForm', a: a};
-};
+var $author$project$Main$SubmitForm = F2(
+	function (a, b) {
+		return {$: 'SubmitForm', a: a, b: b};
+	});
 var $author$project$Main$UpdateFormInput = F3(
 	function (a, b, c) {
 		return {$: 'UpdateFormInput', a: a, b: b, c: c};
@@ -8024,8 +8140,10 @@ var $author$project$Main$formModal = function (fieldType) {
 									[
 										$elm$html$Html$Attributes$class('button is-success'),
 										$elm$html$Html$Events$onClick(
-										$author$project$Main$SubmitForm(
-											$author$project$Main$nameToString(fieldType.name)))
+										A2(
+											$author$project$Main$SubmitForm,
+											$author$project$Main$nameToString(fieldType.name),
+											fieldType.typeRef))
 									]),
 								_List_fromArray(
 									[

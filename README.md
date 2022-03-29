@@ -37,6 +37,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Use the nullability when displaying the form field
 - [ ] Use the nullability when inputting the form field
 - [ ] Use the nullability when making the GraphQL query
+- [ ] TODO: UnionRef
+- [ ] Use RemoteData package https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/
 
 ## Linking UI Elements
 - [ ] List (Tab, Form)
@@ -57,3 +59,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 
 ## CSS
 - Bulma/Bootstrap Class Names for HTML elements as well as custom class names for each element (so they can be overridden)
+
+## Debugging
+```
+data.query.replace(/\n/g,' ')
+```

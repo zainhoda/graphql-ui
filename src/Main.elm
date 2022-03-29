@@ -44,7 +44,7 @@ type Msg
   | HitEndpoint
   | GotIntrospection (Result Http.Error ApiInteractions)
   | UpdateFormInput String String String
-  | SubmitForm String
+  | SubmitForm String Type.TypeReference
   | SetActiveForm (Maybe String)
 
 -- MAIN
@@ -121,8 +121,8 @@ update msg model =
       , Cmd.none
       )
     
-    SubmitForm formName ->
-      ( model, submitForm model formName)
+    SubmitForm formName typeRef ->
+      ( model, submitForm model formName typeRef)
 
     SetActiveForm maybeForm ->
       ( {model | activeForm = maybeForm }, Cmd.none)
@@ -328,7 +328,7 @@ formModal fieldType =
           , section [ class "modal-card-body" ]
               [ fieldTypeToForm fieldType ]
           , footer [ class "modal-card-foot" ]
-              [ button [ Html.Attributes.class "button is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name)) ] [text "Run Query"]
+              [ button [ Html.Attributes.class "button is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name) fieldType.typeRef) ] [text "Run Query"]
               , button [ class "button", Html.Events.onClick (SetActiveForm Nothing) ]
                   [ text "Cancel" ]
               ]
@@ -426,8 +426,8 @@ runIntrospectionQuery url =
     , expect = Http.expectJson GotIntrospection (Json.Decode.field "data" Parser.decoder)
     }
 
-submitForm : Model -> String -> Cmd Msg
-submitForm model formName =
+submitForm : Model -> String -> Type.TypeReference -> Cmd Msg
+submitForm model formName typeRef =
   let formValues = Dict.get formName model.formInput
         |> Maybe.withDefault Dict.empty
         |> Dict.toList
@@ -438,7 +438,7 @@ submitForm model formName =
         GraphQl.object 
           [ GraphQl.field formName
             |> addArguments
-            |> GraphQl.withSelectors [GraphQl.field "id"]
+            |> typeRefToSelectors 0 model.types typeRef
           ]
   in
     case model.config of
@@ -447,6 +447,81 @@ submitForm model formName =
       
       Just config ->
         sendRequest config.graphqlEndpoint request
+
+typeRefToSelectors: Int -> Dict.Dict String Type.TypeDefinition -> Type.TypeReference -> GraphQl.Field a -> GraphQl.Field a
+typeRefToSelectors depth dictTypeDef (Type.TypeReference referrableType isNullable) gqlField =
+  gqlField
+  |> case referrableType of
+      Type.Scalar scalar -> -- Scalar doesn't need to be defined. It just returns the scalar value (bool, string, etc)
+        \x -> x
+      Type.List typeRef -> -- In GraphQL, the fact that it's a list doesn't matter when constructing a query
+        typeRefToSelectors depth dictTypeDef typeRef
+      Type.EnumRef className -> -- For all intents and purposes, enum can be treated as just another scalar
+        \x -> x
+      Type.ObjectRef objectName ->
+        dictTypeDef
+        |> Dict.get objectName
+        |> Maybe.map
+            (typeDefToSelectors depth dictTypeDef)
+        |> Maybe.withDefault -- We should never get here because the referenced type should exist in the Dict
+            (\x -> x)
+      Type.UnionRef unionName ->
+        GraphQl.withSelectors [ GraphQl.field "__typename"] -- TODO: Need to expand this. Lookup the union and do the proper ... on query
+      _ ->
+        GraphQl.withSelectors [ GraphQl.field "id" ]
+
+typeDefToSelectors: Int -> Dict.Dict String Type.TypeDefinition -> Type.TypeDefinition -> GraphQl.Field a -> GraphQl.Field a
+typeDefToSelectors depth dictTypeDef (Type.TypeDefinition classCaseName definableType _) gqlField =
+  gqlField
+  |> case definableType of
+      Type.ScalarType ->
+        (\x -> x)
+      
+      Type.ObjectType listOfField ->
+        GraphQl.withSelectors 
+          (listOfField 
+            |> List.filterMap (typeFieldToGraphQlField (depth+1) dictTypeDef)
+          )
+
+      _ ->
+        GraphQl.withSelectors [ GraphQl.field "id" ]
+
+typeFieldToGraphQlField: Int -> Dict.Dict String Type.TypeDefinition -> Type.Field -> Maybe (GraphQl.Field a)
+typeFieldToGraphQlField depth dictTypeDef typeField =
+  let _ = Debug.log "depth" depth
+      _ = Debug.log "typeField.name" typeField.name
+      _ = Debug.log "typeRefIsNested typeField.typeRef" (typeRefIsNested typeField.typeRef)
+  in
+    if depth <= 2 || (depth <= 3 && (not <| typeRefIsNested typeField.typeRef)) then
+      GraphQl.field (nameToString typeField.name)
+        |> typeRefToSelectors depth dictTypeDef typeField.typeRef
+        |> Just
+    else
+      Nothing
+
+typeRefIsNested : Type.TypeReference -> Bool
+typeRefIsNested (Type.TypeReference referrableType isNullable) =
+  case referrableType of 
+    Type.Scalar _ ->
+      False
+
+    Type.List typeRef ->
+      typeRefIsNested typeRef
+
+    Type.EnumRef _ ->
+      False
+
+    Type.ObjectRef _ ->
+      True
+
+    Type.InputObjectRef _ ->
+      True
+
+    Type.UnionRef _ ->
+      True
+
+    Type.InterfaceRef _ ->
+      True
 
 -- Get fields from query
 -- formName -> model -> typeRef
@@ -459,9 +534,9 @@ submitForm model formName =
 --       Err _ ->
 --         Nothing
       
---       Just apiInteractions ->
+--       Ok apiInteractions ->
 --         apiInteractions.queries
---         |> List.map
+--         |> List.filterMap
 --             (\(Type.TypeDefinition _ definableType _ ) -> 
 --               case definableType of
 --                   Type.ObjectType listOfField ->
@@ -477,7 +552,8 @@ submitForm model formName =
 
 --                   _ ->
 --                     Nothing
---             ) 
+--             )
+--         |> List.head
 
 -- CONSTS
 
