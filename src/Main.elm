@@ -20,6 +20,11 @@ import Graphql.Parser.Type exposing (IsNullable)
 import Graphql.Parser.Type exposing (IsNullable(..))
 import Dict
 import Html.Attributes exposing (class)
+import Generic
+import Generic.Json
+import GenericDict
+import RemoteData
+import Time
 
 -- TYPES
 type alias ConfigURL = String
@@ -36,6 +41,8 @@ type alias Model =
   , types: Dict.Dict String Type.TypeDefinition
   , formInput: Dict.Dict String (Dict.Dict String String)
   , activeForm: Maybe String
+  , response: Dict.Dict String (RemoteData.WebData Generic.Value)
+  , activeResponse: Maybe String
   }
 
 type Msg
@@ -46,6 +53,8 @@ type Msg
   | UpdateFormInput String String String
   | SubmitForm String Type.TypeReference
   | SetActiveForm (Maybe String)
+  | GotQueryResponse String (Result Http.Error String)
+  | SetActiveResponse (Maybe String)
 
 -- MAIN
 
@@ -70,6 +79,8 @@ init configURL =
     , types = Dict.empty
     , formInput = Dict.empty
     , activeForm = Nothing
+    , response = Dict.empty
+    , activeResponse = Nothing
     }
   , getConfig configURL
   )
@@ -122,10 +133,24 @@ update msg model =
       )
     
     SubmitForm formName typeRef ->
-      ( model, submitForm model formName typeRef)
+      ( { model 
+        | response = model.response |> Dict.insert formName (RemoteData.Loading)
+        , activeForm = Nothing
+        , activeResponse = Just formName
+        } 
+      , submitForm model formName typeRef
+      )
 
     SetActiveForm maybeForm ->
       ( {model | activeForm = maybeForm }, Cmd.none)
+
+    SetActiveResponse maybeResponse ->
+      ( {model | activeResponse = maybeResponse }, Cmd.none)
+
+    GotQueryResponse key result ->
+      let genericValue = Debug.log "genericValue" (Result.andThen (\x -> Result.mapError Http.BadBody (Generic.Json.decode x)) result ) |> RemoteData.fromResult
+      in
+        ( { model | response = model.response |> Dict.insert key genericValue} , Cmd.none)
 
 apiInteractionsToFieldDict : Result Http.Error ApiInteractions -> (ApiInteractions -> List Type.TypeDefinition) -> Dict.Dict String Type.Field
 apiInteractionsToFieldDict res queryOrMutation =
@@ -177,8 +202,9 @@ view : Model -> Html Msg
 view model =
   div [Html.Attributes.class "container"]
       [ pre [] [text (Debug.toString model.config)]
-      , pre [] [text (Debug.toString model.formInput)]
       , button [Html.Attributes.class "button is-large is-success" , Html.Events.onClick HitEndpoint ] [text "Introspect!"]
+      , h1 [Html.Attributes.class "title"] [text "Responses"]
+      , tabView model.activeResponse model.response
       , errorView model.introspection
       , apiView model
       ]
@@ -239,11 +265,184 @@ apiView model =
     div []
       [ maybeForm
       , h1 [Html.Attributes.class "title"] [text "Queries"]
-      , ul [] queries
+      , div [Html.Attributes.class "buttons"] queries
       , h1 [Html.Attributes.class "title"] [text "Mutations"]
       , ul [] mutations
       , h1 [Html.Attributes.class "title"] [text "Base Types"]
       , ul [] baseTypes
+      ]
+
+tabView : Maybe String -> Dict.Dict String (RemoteData.WebData Generic.Value) -> Html Msg
+tabView maybeActiveTab dict =
+  let activeTab = Maybe.withDefault "" maybeActiveTab
+      tabList = Dict.toList dict
+      maybeTabContents = Dict.get activeTab dict
+  in
+    div []
+    [ div 
+      [Html.Attributes.class "tabs"]
+      [ ul []
+        ( tabList 
+          |> List.map
+            (\(tabTitle, _) ->
+              li 
+                [Html.Attributes.class (if tabTitle == activeTab then "is-active" else "")] 
+                [a [Html.Events.onClick (SetActiveResponse (Just tabTitle))] [text tabTitle]]
+            )
+        
+        ) 
+      ]
+    , 
+    case maybeTabContents of
+      Just tabContents ->
+        webDataView (genericView False) tabContents
+      
+      Nothing ->
+        text ""
+    ]
+
+webDataView : (a -> Html Msg) -> RemoteData.WebData a -> Html Msg
+webDataView successView remoteData  =
+  case remoteData of
+      RemoteData.NotAsked ->
+        text "Not Asked"
+
+      RemoteData.Loading ->
+        text "Loading..."
+      
+      RemoteData.Failure e ->
+        text (Debug.toString e)
+
+      RemoteData.Success a ->
+        successView a
+
+toUtcString : Time.Posix -> String
+toUtcString time =
+  String.fromInt (Time.toYear Time.utc time)
+  ++ "-" ++
+  (
+  case (Time.toMonth Time.utc time) of
+    Time.Jan -> "01"
+    Time.Feb -> "02"
+    Time.Mar -> "03"
+    Time.Apr -> "04"
+    Time.May -> "05"
+    Time.Jun -> "06"
+    Time.Jul -> "07"
+    Time.Aug -> "08"
+    Time.Sep -> "09"
+    Time.Oct -> "10"
+    Time.Nov -> "11"
+    Time.Dec -> "12"
+  )
+  ++ "-" ++
+  String.fromInt (Time.toDay Time.utc time)
+
+genericView : Bool -> Generic.Value -> Html Msg
+genericView displayAsTable genericValue =
+  case genericValue of
+      Generic.Null ->
+        text "Null"
+      
+      Generic.Bool b ->
+        text (if b then "✅" else "❌")
+      
+      Generic.Int i ->
+        text (String.fromInt i)
+
+      Generic.Float f ->
+        text (String.fromFloat f)
+      
+      Generic.String str ->
+        text str
+
+      Generic.List listValue ->
+        genericTableView listValue
+
+      Generic.Set everySet ->
+        text "TODO: No clue yet how to deal with this set type"
+
+      Generic.Date posix ->
+        text (toUtcString posix)
+
+      Generic.DateTime posix ->
+        text (toUtcString posix)
+
+      Generic.Dict dictValueValue ->
+        if displayAsTable then
+          genericFieldView dictValueValue
+        else
+          genericFieldView dictValueValue
+
+
+genericTableView : List Generic.Value -> Html Msg
+genericTableView listValue =
+  let headers =
+        listValue
+        |> List.head
+        |> Maybe.map
+          (\value -> 
+            case value of
+
+              Generic.Dict dictValueValue ->
+                GenericDict.keys dictValueValue
+                |> List.map (genericView False)
+    
+              _ ->
+                []
+          )
+        |> Maybe.withDefault [(text "")]
+      contents =
+        listValue
+        |> List.map
+          (\value -> 
+            case value of
+
+              Generic.Dict dictValueValue ->
+                GenericDict.values dictValueValue
+                |> List.map (genericView False)
+    
+              _ ->
+                []
+          )
+  in
+    div 
+      [Html.Attributes.class "table-container"]
+      [ table [Html.Attributes.class "table is-striped"]
+        [ thead []
+          [tr []
+            (headers |> List.map (\x -> th [] [x]))
+          ]
+        , tbody []
+          ( contents 
+            |> List.map 
+                (\x -> 
+                  tr [] 
+                  (x |> List.map (\y -> td [] [y]))
+                
+                )
+          )
+        ]
+      ]
+genericFieldView : GenericDict.Dict Generic.Value Generic.Value -> Html Msg
+genericFieldView dict =
+  let keyValuePairs = GenericDict.toList dict
+  in
+    div 
+      [Html.Attributes.class "table-container"]
+      [ table [Html.Attributes.class "table is-striped"]
+        [tbody 
+          [] 
+          ( keyValuePairs
+            |> List.map 
+              (\(k, v) -> 
+                tr [] 
+                  [ th [] [genericView True k]
+                  , td [] [genericView True v]
+                  ]
+              )
+          )
+        ]
       ]
 
 typeView : TypeDefinition -> Html Msg
@@ -300,7 +499,7 @@ fieldTypeToButton fieldType =
   let formName = (nameToString fieldType.name)
   in
     button 
-      [ class "button"
+      [ class "button is-info is-light"
       , Html.Events.onClick (SetActiveForm (Just formName))
       ] 
       [text formName]
@@ -412,11 +611,19 @@ typesRequest =
     ]
   
 -- sendRequest : String -> Request -> Cmd Msg
-sendRequest url request =
-  GraphQl.query request
-    |> GraphQl.Http.send { url = url, headers = [] } 
-      (\result -> let _ = Debug.log "result" result in NoOp)
-      (Json.Decode.succeed "42")
+-- sendRequest url request =
+--   GraphQl.query request
+--     |> GraphQl.Http.send { url = url, headers = [] } 
+--       (\result -> let _ = Debug.log "result" result in NoOp)
+--       (Generic.Json.decode)
+
+sendRequest : String -> String -> GraphQl.Operation GraphQl.Query GraphQl.Anonymous -> Cmd Msg
+sendRequest url formName operation =
+  Http.post 
+    { url = url
+    , body = Http.jsonBody (operation |> GraphQl.query |> GraphQl.toJson) 
+    , expect = Http.expectString (GotQueryResponse formName)
+    }
 
 runIntrospectionQuery : String -> Cmd Msg
 runIntrospectionQuery url =
@@ -446,7 +653,7 @@ submitForm model formName typeRef =
         Cmd.none
       
       Just config ->
-        sendRequest config.graphqlEndpoint request
+        sendRequest config.graphqlEndpoint formName request
 
 typeRefToSelectors: Int -> Dict.Dict String Type.TypeDefinition -> Type.TypeReference -> GraphQl.Field a -> GraphQl.Field a
 typeRefToSelectors depth dictTypeDef (Type.TypeReference referrableType isNullable) gqlField =
@@ -490,10 +697,6 @@ maxDepth : Int
 maxDepth = 1
 typeFieldToGraphQlField: Int -> Dict.Dict String Type.TypeDefinition -> Type.Field -> Maybe (GraphQl.Field a)
 typeFieldToGraphQlField depth dictTypeDef typeField =
-  let _ = Debug.log "depth" depth
-      _ = Debug.log "typeField.name" typeField.name
-      _ = Debug.log "typeRefIsNested typeField.typeRef" (typeRefIsNested typeField.typeRef)
-  in
     if depth < maxDepth || (depth <= maxDepth && (not <| typeRefIsNested typeField.typeRef)) then
       GraphQl.field (nameToString typeField.name)
         |> typeRefToSelectors depth dictTypeDef typeField.typeRef

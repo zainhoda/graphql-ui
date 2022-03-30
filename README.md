@@ -30,16 +30,25 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Store form values in a Dict QueryName (Dict FieldName String)
 - [x] Form fields to GraphQL Query/Mutation
 - [x] Add most of the fields to the request
-- [ ] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
-- [ ] Tables/FieldViewer from Query Results
+- [x] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
+- [x] Tables/FieldViewer from Query Results
+- [ ] Handle enum types instead of just string (i.e. GraphQl.string)
+- [ ] Mutations
+- [ ] Make the UI look a little nicer
+- [ ] Make the URL editable
 - [ ] Use the typeRef of the argument for displaying the form field
 - [ ] Use the typeRef of the argument for storing the form field
+- [ ] Handle Mutations
 - [ ] Use the nullability when displaying the form field
 - [ ] Use the nullability when inputting the form field
 - [ ] Use the nullability when making the GraphQL query
 - [ ] TODO: UnionRef
+- [ ] Enum types in forms
 - [ ] Additional types
 - [ ] Use RemoteData package https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/
+- [ ] Get rid of config.json and instead pass it through flags so that it's runtime-configurable
+- [ ] TODO: EverySet type?
+- [ ] Use GraphQL Descriptions in Form Inputs and maybe Table tooltips
 
 ## Linking UI Elements
 - [ ] List (Tab, Form)
