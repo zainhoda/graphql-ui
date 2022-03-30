@@ -29,7 +29,7 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Forms from Query/Mutation Arguments
 - [x] Store form values in a Dict QueryName (Dict FieldName String)
 - [x] Form fields to GraphQL Query/Mutation
-- [ ] Add all the fields to the request
+- [x] Add most of the fields to the request
 - [ ] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [ ] Tables/FieldViewer from Query Results
 - [ ] Use the typeRef of the argument for displaying the form field
@@ -38,6 +38,7 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Use the nullability when inputting the form field
 - [ ] Use the nullability when making the GraphQL query
 - [ ] TODO: UnionRef
+- [ ] Additional types
 - [ ] Use RemoteData package https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/
 
 ## Linking UI Elements

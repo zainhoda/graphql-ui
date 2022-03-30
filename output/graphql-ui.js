@@ -7624,6 +7624,7 @@ var $ghivert$elm_graphql$GraphQl$Argument = function (a) {
 };
 var $ghivert$elm_graphql$Helpers$betweenQuotes = $ghivert$elm_graphql$Helpers$between('\"');
 var $ghivert$elm_graphql$GraphQl$string = A2($elm$core$Basics$composeR, $ghivert$elm_graphql$Helpers$betweenQuotes, $ghivert$elm_graphql$GraphQl$Argument);
+var $author$project$Main$maxDepth = 1;
 var $author$project$Main$typeRefIsNested = function (_v0) {
 	typeRefIsNested:
 	while (true) {
@@ -7688,7 +7689,7 @@ var $author$project$Main$typeFieldToGraphQlField = F3(
 			$elm$core$Debug$log,
 			'typeRefIsNested typeField.typeRef',
 			$author$project$Main$typeRefIsNested(typeField.typeRef));
-		return ((depth <= 2) || ((depth <= 3) && (!$author$project$Main$typeRefIsNested(typeField.typeRef)))) ? $elm$core$Maybe$Just(
+		return ((_Utils_cmp(depth, $author$project$Main$maxDepth) < 0) || ((_Utils_cmp(depth, $author$project$Main$maxDepth) < 1) && (!$author$project$Main$typeRefIsNested(typeField.typeRef)))) ? $elm$core$Maybe$Just(
 			A4(
 				$author$project$Main$typeRefToSelectors,
 				depth,

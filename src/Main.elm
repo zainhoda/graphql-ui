@@ -486,13 +486,15 @@ typeDefToSelectors depth dictTypeDef (Type.TypeDefinition classCaseName definabl
       _ ->
         GraphQl.withSelectors [ GraphQl.field "id" ]
 
+maxDepth : Int
+maxDepth = 1
 typeFieldToGraphQlField: Int -> Dict.Dict String Type.TypeDefinition -> Type.Field -> Maybe (GraphQl.Field a)
 typeFieldToGraphQlField depth dictTypeDef typeField =
   let _ = Debug.log "depth" depth
       _ = Debug.log "typeField.name" typeField.name
       _ = Debug.log "typeRefIsNested typeField.typeRef" (typeRefIsNested typeField.typeRef)
   in
-    if depth <= 2 || (depth <= 3 && (not <| typeRefIsNested typeField.typeRef)) then
+    if depth < maxDepth || (depth <= maxDepth && (not <| typeRefIsNested typeField.typeRef)) then
       GraphQl.field (nameToString typeField.name)
         |> typeRefToSelectors depth dictTypeDef typeField.typeRef
         |> Just
