@@ -39,7 +39,7 @@ type alias Model =
   , queries: Dict.Dict String Type.Field
   , mutations: Dict.Dict String Type.Field
   , types: Dict.Dict String Type.TypeDefinition
-  , formInput: Dict.Dict String (Dict.Dict String String)
+  , formInput: Dict.Dict String (Dict.Dict String QueryArgument)
   , activeForm: Maybe String
   , response: Dict.Dict String (RemoteData.WebData Generic.Value)
   , activeResponse: Maybe String
@@ -50,11 +50,19 @@ type Msg
   | GotConfig (Result Http.Error Config)
   | HitEndpoint
   | GotIntrospection (Result Http.Error ApiInteractions)
-  | UpdateFormInput String String String
+  | UpdateFormInput String String ArgumentType String 
   | SubmitForm String Type.TypeReference
   | SetActiveForm (Maybe String)
   | GotQueryResponse String (Result Http.Error String)
   | SetActiveResponse (Maybe String)
+
+type QueryArgument
+  = QueryLeaf String ArgumentType
+  | QueryNested (Dict.Dict String QueryArgument)
+
+type ArgumentType
+  = ArgumentString
+  | ArgumentEnum
 
 -- MAIN
 
@@ -125,13 +133,13 @@ update msg model =
       , Cmd.none
       )
 
-    UpdateFormInput formName formField formValue ->
+    UpdateFormInput formName formField argumentType formValue  ->
       ( { model 
         | formInput = 
             let newFormFieldDict = model.formInput 
                   |> Dict.get formName
                   |> Maybe.withDefault Dict.empty
-                  |> Dict.insert formField formValue
+                  |> Dict.insert formField (QueryLeaf formValue argumentType)
             in
               Dict.insert formName newFormFieldDict model.formInput
         } 
@@ -541,18 +549,37 @@ formModal fieldType =
 
 argToFormField : String -> Type.Arg -> Html Msg
 argToFormField formName arg =
-  div
-    [ Html.Attributes.class "field" ]
-    [ label [Html.Attributes.class "label"] [text (nameToString arg.name) ] 
-    , div 
-      [ Html.Attributes.class "control" ] 
-      [ input [ Html.Attributes.class "input"
-              , Html.Attributes.type_ "text"
-              , Html.Attributes.placeholder (arg.description |> Maybe.withDefault "") 
-              , Html.Events.onInput (UpdateFormInput formName (nameToString arg.name))
-              ] [] 
+  let (referrableType, isNullable) =
+        case arg.typeRef of
+            Type.TypeReference referrableType_ isNullable_ ->
+              (referrableType_, isNullable_)
+  in
+    div
+      [ Html.Attributes.class "field" ]
+      [ label [Html.Attributes.class "label"] [text (nameToString arg.name) ] 
+      , div 
+        [ Html.Attributes.class "control" ] 
+        [ nullableField isNullable
+        , input [ Html.Attributes.class "input"
+                , Html.Attributes.type_ "text"
+                , Html.Attributes.placeholder (arg.description |> Maybe.withDefault "") 
+                , Html.Events.onInput (UpdateFormInput formName (nameToString arg.name) (typeRefToArgumentType arg.typeRef) )
+                ] []
+        , pre [] [text (Debug.toString arg.typeRef)]
+        ]
       ]
-    ]
+
+typeRefToArgumentType : Type.TypeReference -> ArgumentType
+typeRefToArgumentType (Type.TypeReference referrableType isNullable) =
+  case referrableType of
+      Type.Scalar _ ->
+        ArgumentString
+      
+      Type.EnumRef _ ->
+        ArgumentEnum
+      
+      _ -> -- TODO: Fill out for all types
+        ArgumentString 
 
 nullableField : Type.IsNullable -> Html Msg
 nullableField isNullable =
@@ -566,14 +593,14 @@ nullableField isNullable =
         [ label 
           [Html.Attributes.class "radio"] 
           [ input 
-            [Html.Attributes.type_ "radio", Html.Attributes.name "nullable"] 
-            [text "Null"]
+            [Html.Attributes.type_ "radio", Html.Attributes.name "nullable"] []
+          , text "Null"
           ]
         , label 
           [Html.Attributes.class "radio"] 
           [ input 
-            [Html.Attributes.type_ "radio", Html.Attributes.name "nullable"] 
-            [text "Value"]
+            [Html.Attributes.type_ "radio", Html.Attributes.name "nullable"] []
+          , text "Value"
           ]
         ]
 argToString : Type.Arg -> String
@@ -641,7 +668,7 @@ submitForm model formName typeRef =
         |> Dict.toList
       
       addArguments x = 
-        List.foldl (\(fieldName, fieldValue) -> \y -> y |> GraphQl.withArgument fieldName (GraphQl.string fieldValue) ) x formValues
+        List.foldl (\(fieldName, fieldValue) -> \y -> y |> GraphQl.withArgument fieldName (queryArgumentToGraphQlAgument fieldValue) ) x formValues
       request = 
         GraphQl.object 
           [ GraphQl.field formName
@@ -655,6 +682,23 @@ submitForm model formName typeRef =
       
       Just config ->
         sendRequest config.graphqlEndpoint formName request
+
+queryArgumentToGraphQlAgument : QueryArgument -> GraphQl.Argument
+queryArgumentToGraphQlAgument queryArgument =
+  case queryArgument of
+      QueryLeaf str argumentType ->
+        case argumentType of
+            ArgumentString ->
+              GraphQl.string str
+            
+            ArgumentEnum ->
+              GraphQl.type_ str
+
+      QueryNested dictStringQueryArgument ->
+        dictStringQueryArgument
+        |> Dict.map (\_ -> \v -> queryArgumentToGraphQlAgument v)
+        |> Dict.toList
+        |> GraphQl.input
 
 typeRefToSelectors: Int -> Dict.Dict String Type.TypeDefinition -> Type.TypeReference -> GraphQl.Field a -> GraphQl.Field a
 typeRefToSelectors depth dictTypeDef (Type.TypeReference referrableType isNullable) gqlField =

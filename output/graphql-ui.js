@@ -5643,6 +5643,10 @@ var $elm$http$Http$BadBody = function (a) {
 	return {$: 'BadBody', a: a};
 };
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
+var $author$project$Main$QueryLeaf = F2(
+	function (a, b) {
+		return {$: 'QueryLeaf', a: a, b: b};
+	});
 var $elm$core$Result$andThen = F2(
 	function (callback, result) {
 		if (result.$ === 'Ok') {
@@ -8868,6 +8872,76 @@ var $ghivert$elm_graphql$GraphQl$object = A2(
 	$elm$core$Basics$composeR,
 	$ghivert$elm_graphql$GraphQl$Field$addSelectorsIn($ghivert$elm_graphql$GraphQl$Field$new),
 	$ghivert$elm_graphql$GraphQl$Operation);
+var $ghivert$elm_graphql$GraphQl$Argument = function (a) {
+	return {$: 'Argument', a: a};
+};
+var $ghivert$elm_graphql$GraphQl$addArgField = function (_v0) {
+	var param = _v0.a;
+	var operation = _v0.b.a;
+	return param + (': ' + operation);
+};
+var $ghivert$elm_graphql$Helpers$betweenBraces = function (string) {
+	return '{' + (string + '}');
+};
+var $ghivert$elm_graphql$GraphQl$argsToString = A2(
+	$elm$core$Basics$composeR,
+	$elm$core$List$map($ghivert$elm_graphql$GraphQl$addArgField),
+	A2(
+		$elm$core$Basics$composeR,
+		$elm$core$String$join(', '),
+		$ghivert$elm_graphql$Helpers$betweenBraces));
+var $ghivert$elm_graphql$GraphQl$input = A2($elm$core$Basics$composeR, $ghivert$elm_graphql$GraphQl$argsToString, $ghivert$elm_graphql$GraphQl$Argument);
+var $elm$core$Dict$map = F2(
+	function (func, dict) {
+		if (dict.$ === 'RBEmpty_elm_builtin') {
+			return $elm$core$Dict$RBEmpty_elm_builtin;
+		} else {
+			var color = dict.a;
+			var key = dict.b;
+			var value = dict.c;
+			var left = dict.d;
+			var right = dict.e;
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				color,
+				key,
+				A2(func, key, value),
+				A2($elm$core$Dict$map, func, left),
+				A2($elm$core$Dict$map, func, right));
+		}
+	});
+var $ghivert$elm_graphql$Helpers$between = F2(
+	function (_char, string) {
+		return _Utils_ap(
+			_char,
+			_Utils_ap(string, _char));
+	});
+var $ghivert$elm_graphql$Helpers$betweenQuotes = $ghivert$elm_graphql$Helpers$between('\"');
+var $ghivert$elm_graphql$GraphQl$string = A2($elm$core$Basics$composeR, $ghivert$elm_graphql$Helpers$betweenQuotes, $ghivert$elm_graphql$GraphQl$Argument);
+var $ghivert$elm_graphql$GraphQl$type_ = $ghivert$elm_graphql$GraphQl$Argument;
+var $author$project$Main$queryArgumentToGraphQlAgument = function (queryArgument) {
+	if (queryArgument.$ === 'QueryLeaf') {
+		var str = queryArgument.a;
+		var argumentType = queryArgument.b;
+		if (argumentType.$ === 'ArgumentString') {
+			return $ghivert$elm_graphql$GraphQl$string(str);
+		} else {
+			return $ghivert$elm_graphql$GraphQl$type_(str);
+		}
+	} else {
+		var dictStringQueryArgument = queryArgument.a;
+		return $ghivert$elm_graphql$GraphQl$input(
+			$elm$core$Dict$toList(
+				A2(
+					$elm$core$Dict$map,
+					function (_v2) {
+						return function (v) {
+							return $author$project$Main$queryArgumentToGraphQlAgument(v);
+						};
+					},
+					dictStringQueryArgument)));
+	}
+};
 var $author$project$Main$GotQueryResponse = F2(
 	function (a, b) {
 		return {$: 'GotQueryResponse', a: a, b: b};
@@ -8895,15 +8969,6 @@ var $ghivert$elm_graphql$GraphQl$query = function (query_) {
 var $elm$core$List$concat = function (lists) {
 	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
 };
-var $ghivert$elm_graphql$Helpers$betweenBraces = function (string) {
-	return '{' + (string + '}');
-};
-var $ghivert$elm_graphql$Helpers$between = F2(
-	function (_char, string) {
-		return _Utils_ap(
-			_char,
-			_Utils_ap(string, _char));
-	});
 var $ghivert$elm_graphql$Helpers$betweenNewline = $ghivert$elm_graphql$Helpers$between('\n');
 var $ghivert$elm_graphql$Helpers$betweenParen = function (string) {
 	return '(' + (string + ')');
@@ -9062,11 +9127,6 @@ var $author$project$Main$sendRequest = F3(
 				url: url
 			});
 	});
-var $ghivert$elm_graphql$GraphQl$Argument = function (a) {
-	return {$: 'Argument', a: a};
-};
-var $ghivert$elm_graphql$Helpers$betweenQuotes = $ghivert$elm_graphql$Helpers$between('\"');
-var $ghivert$elm_graphql$GraphQl$string = A2($elm$core$Basics$composeR, $ghivert$elm_graphql$Helpers$betweenQuotes, $ghivert$elm_graphql$GraphQl$Argument);
 var $author$project$Main$maxDepth = 1;
 var $author$project$Main$typeRefIsNested = function (_v0) {
 	typeRefIsNested:
@@ -9222,7 +9282,7 @@ var $author$project$Main$submitForm = F3(
 						return A3(
 							$ghivert$elm_graphql$GraphQl$withArgument,
 							fieldName,
-							$ghivert$elm_graphql$GraphQl$string(fieldValue),
+							$author$project$Main$queryArgumentToGraphQlAgument(fieldValue),
 							y);
 					};
 				},
@@ -9297,7 +9357,8 @@ var $author$project$Main$update = F2(
 			case 'UpdateFormInput':
 				var formName = msg.a;
 				var formField = msg.b;
-				var formValue = msg.c;
+				var argumentType = msg.c;
+				var formValue = msg.d;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -9306,7 +9367,7 @@ var $author$project$Main$update = F2(
 								var newFormFieldDict = A3(
 									$elm$core$Dict$insert,
 									formField,
-									formValue,
+									A2($author$project$Main$QueryLeaf, formValue, argumentType),
 									A2(
 										$elm$core$Maybe$withDefault,
 										$elm$core$Dict$empty,
@@ -9420,12 +9481,65 @@ var $author$project$Main$SubmitForm = F2(
 	function (a, b) {
 		return {$: 'SubmitForm', a: a, b: b};
 	});
-var $author$project$Main$UpdateFormInput = F3(
-	function (a, b, c) {
-		return {$: 'UpdateFormInput', a: a, b: b, c: c};
+var $author$project$Main$UpdateFormInput = F4(
+	function (a, b, c, d) {
+		return {$: 'UpdateFormInput', a: a, b: b, c: c, d: d};
 	});
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$label = _VirtualDom_node('label');
+var $elm$html$Html$Attributes$name = $elm$html$Html$Attributes$stringProperty('name');
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $author$project$Main$nullableField = function (isNullable) {
+	if (isNullable.$ === 'NonNullable') {
+		return $elm$html$Html$text('');
+	} else {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('control')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$label,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('radio')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$input,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$type_('radio'),
+									$elm$html$Html$Attributes$name('nullable')
+								]),
+							_List_Nil),
+							$elm$html$Html$text('Null')
+						])),
+					A2(
+					$elm$html$Html$label,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('radio')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$input,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$type_('radio'),
+									$elm$html$Html$Attributes$name('nullable')
+								]),
+							_List_Nil),
+							$elm$html$Html$text('Value')
+						]))
+				]));
+	}
+};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -9454,9 +9568,32 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
-var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$pre = _VirtualDom_node('pre');
+var $elm$core$Debug$toString = _Debug_toString;
+var $author$project$Main$ArgumentEnum = {$: 'ArgumentEnum'};
+var $author$project$Main$ArgumentString = {$: 'ArgumentString'};
+var $author$project$Main$typeRefToArgumentType = function (_v0) {
+	var referrableType = _v0.a;
+	var isNullable = _v0.b;
+	switch (referrableType.$) {
+		case 'Scalar':
+			return $author$project$Main$ArgumentString;
+		case 'EnumRef':
+			return $author$project$Main$ArgumentEnum;
+		default:
+			return $author$project$Main$ArgumentString;
+	}
+};
 var $author$project$Main$argToFormField = F2(
 	function (formName, arg) {
+		var _v0 = function () {
+			var _v1 = arg.typeRef;
+			var referrableType_ = _v1.a;
+			var isNullable_ = _v1.b;
+			return _Utils_Tuple2(referrableType_, isNullable_);
+		}();
+		var referrableType = _v0.a;
+		var isNullable = _v0.b;
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -9484,6 +9621,7 @@ var $author$project$Main$argToFormField = F2(
 						]),
 					_List_fromArray(
 						[
+							$author$project$Main$nullableField(isNullable),
 							A2(
 							$elm$html$Html$input,
 							_List_fromArray(
@@ -9493,17 +9631,24 @@ var $author$project$Main$argToFormField = F2(
 									$elm$html$Html$Attributes$placeholder(
 									A2($elm$core$Maybe$withDefault, '', arg.description)),
 									$elm$html$Html$Events$onInput(
-									A2(
+									A3(
 										$author$project$Main$UpdateFormInput,
 										formName,
-										$author$project$Main$nameToString(arg.name)))
+										$author$project$Main$nameToString(arg.name),
+										$author$project$Main$typeRefToArgumentType(arg.typeRef)))
 								]),
-							_List_Nil)
+							_List_Nil),
+							A2(
+							$elm$html$Html$pre,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									$elm$core$Debug$toString(arg.typeRef))
+								]))
 						]))
 				]));
 	});
-var $elm$html$Html$pre = _VirtualDom_node('pre');
-var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$Main$fieldTypeToForm = function (fieldType) {
 	return A2(
 		$elm$html$Html$div,

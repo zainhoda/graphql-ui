@@ -33,8 +33,9 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [x] Tables/FieldViewer from Query Results
 - [ ] argToFormField - lookup enum values (show fields for any kind of TypeReference actually)
-- [ ] argToFormField - send additional type information to UpdateFormInput
-- [ ] Handle enum types instead of just string (i.e. GraphQl.string) 
+- [ ] typeRefToArgumentType - handle all types
+- [x] argToFormField - send additional type information to UpdateFormInput
+- [x] Handle enum types instead of just string (i.e. GraphQl.string) 
 - [ ] Mutations
 - [ ] Make the UI look a little nicer
 - [ ] Make the URL editable
@@ -48,9 +49,14 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Enum types in forms
 - [ ] Additional types
 - [ ] Use RemoteData package https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/
-- [ ] Get rid of config.json and instead pass it through flags so that it's runtime-configurable
+- [x] Get rid of config.json and instead pass it through flags so that it's runtime-configurable
 - [ ] TODO: EverySet type?
 - [ ] Use GraphQL Descriptions in Form Inputs and maybe Table tooltips
+
+## Edit View
+- [ ] Config flag to set edit_mode = true
+- [ ] Display the JSON of the config in edit mode
+- [ ] On edit mode, certain config fields are editable directly
 
 ## Linking UI Elements
 - [ ] List (Tab, Form)
