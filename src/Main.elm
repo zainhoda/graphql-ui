@@ -27,7 +27,7 @@ import RemoteData
 import Time
 
 -- TYPES
-type alias ConfigURL = String
+type alias Flags = Json.Decode.Value
 
 type alias Config = 
   { graphqlEndpoint: String
@@ -58,7 +58,7 @@ type Msg
 
 -- MAIN
 
-main : Program ConfigURL Model Msg
+main : Program Flags Model Msg
 main =
   Browser.element
     { init = init
@@ -70,9 +70,9 @@ main =
 
 -- INIT
 
-init : ConfigURL -> ( Model, Cmd Msg )
-init configURL =
-  ( { config = Nothing
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+  ( { config = flagsToMaybeConfig flags 
     , introspection = Result.Err <| Http.BadUrl "Not Asked Yet -- TODO: Change this to another type"
     , queries = Dict.empty
     , mutations = Dict.empty
@@ -82,9 +82,15 @@ init configURL =
     , response = Dict.empty
     , activeResponse = Nothing
     }
-  , getConfig configURL
+  , Cmd.none
   )
 
+flagsToMaybeConfig : Flags -> Maybe Config
+flagsToMaybeConfig flags =
+  Json.Decode.decodeValue
+  (Json.Decode.field "graphql_endpoint" Json.Decode.string |> Json.Decode.map Config)
+  flags
+  |> Result.toMaybe
 
 -- UPDATE
 
@@ -252,14 +258,13 @@ apiView model =
       mutations =
         model.mutations
         |> Dict.toList
-        |> List.map Debug.toString
-        |> List.map (\x -> li [] [ text x])
+        |> List.map (\(_, queryField) -> fieldTypeToButton queryField)
 
       baseTypes =
         model.types
         |> Dict.toList
         |> List.map Debug.toString
-        |> List.map (\x -> li [] [ text x])
+        |> List.map (\x -> li [] [ pre [] [text x]])
 
   in
     div []
@@ -267,8 +272,8 @@ apiView model =
       , h1 [Html.Attributes.class "title"] [text "Queries"]
       , div [Html.Attributes.class "buttons"] queries
       , h1 [Html.Attributes.class "title"] [text "Mutations"]
-      , ul [] mutations
-      , h1 [Html.Attributes.class "title"] [text "Base Types"]
+      , div [Html.Attributes.class "buttons"] mutations
+      , h1 [Html.Attributes.class "title"] [text "Available Types"]
       , ul [] baseTypes
       ]
 
@@ -308,7 +313,7 @@ webDataView successView remoteData  =
         text "Not Asked"
 
       RemoteData.Loading ->
-        text "Loading..."
+        progress [Html.Attributes.class "progress is-large is-info", Html.Attributes.max "100"] [text ""]
       
       RemoteData.Failure e ->
         text (Debug.toString e)
@@ -584,10 +589,6 @@ subscriptions _ =
   Sub.none
 
 -- CMD
-
-getConfig : ConfigURL -> Cmd Msg
-getConfig configURL =
-  Http.get {url = configURL, expect = Http.expectJson GotConfig configDecoder}
 
 configDecoder : Json.Decode.Decoder Config
 configDecoder =

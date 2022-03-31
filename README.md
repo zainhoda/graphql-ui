@@ -32,7 +32,9 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Add most of the fields to the request
 - [x] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [x] Tables/FieldViewer from Query Results
-- [ ] Handle enum types instead of just string (i.e. GraphQl.string)
+- [ ] argToFormField - lookup enum values (show fields for any kind of TypeReference actually)
+- [ ] argToFormField - send additional type information to UpdateFormInput
+- [ ] Handle enum types instead of just string (i.e. GraphQl.string) 
 - [ ] Mutations
 - [ ] Make the UI look a little nicer
 - [ ] Make the URL editable
@@ -63,6 +65,9 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Verify config against GraphQL endpoint
 
 ## Configs
+- Endpoint
+- Headers
+- Queries and parameters to execute on startup
 - GraphQL Queries to Views (with Buttons)
 - Buttons to Form Field prepopulation + named Mutation (or Query)
     - Form Submit executes Mutation
