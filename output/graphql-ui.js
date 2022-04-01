@@ -7168,6 +7168,37 @@ var $krisajenkins$remotedata$RemoteData$fromResult = function (result) {
 		return $krisajenkins$remotedata$RemoteData$Success(x);
 	}
 };
+var $elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+				switch (_v1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return $elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
+		}
+	});
 var $elm$core$Debug$log = _Debug_log;
 var $author$project$Main$GotIntrospection = function (a) {
 	return {$: 'GotIntrospection', a: a};
@@ -8205,37 +8236,6 @@ var $elm$core$Maybe$isJust = function (maybe) {
 	}
 };
 var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var $elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
-				switch (_v1.$) {
-					case 'LT':
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 'EQ':
-						return $elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
-			}
-		}
-	});
 var $elm$core$Dict$getMin = function (dict) {
 	getMin:
 	while (true) {
@@ -8954,13 +8954,13 @@ var $elm$http$Http$jsonBody = function (value) {
 		'application/json',
 		A2($elm$json$Json$Encode$encode, 0, value));
 };
-var $ghivert$elm_graphql$GraphQl$OperationQuery = {$: 'OperationQuery'};
+var $ghivert$elm_graphql$GraphQl$OperationMutation = {$: 'OperationMutation'};
 var $ghivert$elm_graphql$GraphQl$Request = F3(
 	function (a, b, c) {
 		return {$: 'Request', a: a, b: b, c: c};
 	});
-var $ghivert$elm_graphql$GraphQl$query = function (query_) {
-	return A3($ghivert$elm_graphql$GraphQl$Request, $ghivert$elm_graphql$GraphQl$OperationQuery, query_, $elm$core$Maybe$Nothing);
+var $ghivert$elm_graphql$GraphQl$mutation = function (query_) {
+	return A3($ghivert$elm_graphql$GraphQl$Request, $ghivert$elm_graphql$GraphQl$OperationMutation, query_, $elm$core$Maybe$Nothing);
 };
 var $elm$core$List$concat = function (lists) {
 	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
@@ -9111,7 +9111,23 @@ var $ghivert$elm_graphql$GraphQl$toJson = function (_v0) {
 	var variables = _v0.c;
 	return A3($ghivert$elm_graphql$GraphQl$operationToJson, requestType, operation, variables);
 };
-var $author$project$Main$sendRequest = F3(
+var $author$project$Main$sendMutationRequest = F3(
+	function (url, formName, operation) {
+		return $elm$http$Http$post(
+			{
+				body: $elm$http$Http$jsonBody(
+					$ghivert$elm_graphql$GraphQl$toJson(
+						$ghivert$elm_graphql$GraphQl$mutation(operation))),
+				expect: $elm$http$Http$expectString(
+					$author$project$Main$GotQueryResponse(formName)),
+				url: url
+			});
+	});
+var $ghivert$elm_graphql$GraphQl$OperationQuery = {$: 'OperationQuery'};
+var $ghivert$elm_graphql$GraphQl$query = function (query_) {
+	return A3($ghivert$elm_graphql$GraphQl$Request, $ghivert$elm_graphql$GraphQl$OperationQuery, query_, $elm$core$Maybe$Nothing);
+};
+var $author$project$Main$sendQueryRequest = F3(
 	function (url, formName, operation) {
 		return $elm$http$Http$post(
 			{
@@ -9261,8 +9277,8 @@ var $ghivert$elm_graphql$GraphQl$withArgument = F3(
 			_Utils_Tuple2(name, content),
 			value);
 	});
-var $author$project$Main$submitForm = F3(
-	function (model, formName, typeRef) {
+var $author$project$Main$submitForm = F4(
+	function (isQuery, model, formName, typeRef) {
 		var formValues = $elm$core$Dict$toList(
 			A2(
 				$elm$core$Maybe$withDefault,
@@ -9301,7 +9317,7 @@ var $author$project$Main$submitForm = F3(
 			return $elm$core$Platform$Cmd$none;
 		} else {
 			var config = _v0.a;
-			return A3($author$project$Main$sendRequest, config.graphqlEndpoint, formName, request);
+			return isQuery ? A3($author$project$Main$sendQueryRequest, config.graphqlEndpoint, formName, request) : A3($author$project$Main$sendMutationRequest, config.graphqlEndpoint, formName, request);
 		}
 	});
 var $author$project$Main$QueryLeaf = F2(
@@ -9463,7 +9479,21 @@ var $author$project$Main$update = F2(
 							activeResponse: $elm$core$Maybe$Just(formName),
 							response: A3($elm$core$Dict$insert, formName, $krisajenkins$remotedata$RemoteData$Loading, model.response)
 						}),
-					A3($author$project$Main$submitForm, model, formName, typeRef));
+					function () {
+						var maybeQuery = A2($elm$core$Dict$get, formName, model.queries);
+						var maybeMutation = A2($elm$core$Dict$get, formName, model.mutations);
+						if (maybeQuery.$ === 'Nothing') {
+							if (maybeMutation.$ === 'Nothing') {
+								return $elm$core$Platform$Cmd$none;
+							} else {
+								var mutation = maybeMutation.a;
+								return A4($author$project$Main$submitForm, false, model, formName, typeRef);
+							}
+						} else {
+							var query = maybeQuery.a;
+							return A4($author$project$Main$submitForm, true, model, formName, typeRef);
+						}
+					}());
 			case 'SetActiveForm':
 				var maybeForm = _v0.a;
 				return _Utils_Tuple2(
@@ -9562,6 +9592,7 @@ var $author$project$Main$UpdateFormAt = F3(
 	function (a, b, c) {
 		return {$: 'UpdateFormAt', a: a, b: b, c: c};
 	});
+var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -9607,7 +9638,7 @@ var $author$project$Main$typeRefToArgumentType = function (_v0) {
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $author$project$Main$inputScalarOrEnum = F2(
 	function (path, typeRef) {
-		return A2(
+		var inputHtml = A2(
 			$elm$html$Html$input,
 			_List_fromArray(
 				[
@@ -9623,6 +9654,54 @@ var $author$project$Main$inputScalarOrEnum = F2(
 					})
 				]),
 			_List_Nil);
+		var referrableType = typeRef.a;
+		var isNullable = typeRef.b;
+		if (isNullable.$ === 'Nullable') {
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('field has-addons')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('control')
+							]),
+						_List_fromArray(
+							[inputHtml])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('control')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$a,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('button is-warning'),
+										$elm$html$Html$Events$onClick(
+										A3(
+											$author$project$Main$UpdateFormAt,
+											path,
+											$author$project$Main$typeRefToArgumentType(typeRef),
+											$elm$core$Maybe$Nothing))
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Clear')
+									]))
+							]))
+					]));
+		} else {
+			return inputHtml;
+		}
 	});
 var $elm$html$Html$td = _VirtualDom_node('td');
 var $elm$html$Html$th = _VirtualDom_node('th');
@@ -10055,7 +10134,6 @@ var $author$project$Main$errorView = function (result) {
 var $author$project$Main$SetActiveResponse = function (a) {
 	return {$: 'SetActiveResponse', a: a};
 };
-var $elm$html$Html$a = _VirtualDom_node('a');
 var $edkv$elm_generic_dict$GenericDict$keys = function (_v0) {
 	var dict = _v0.a;
 	return A3(

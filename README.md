@@ -39,12 +39,12 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] TODO: UnionRef
 - [ ] Displaying UnionRef tables is probably wrong -- need to account for all fields first when constructing the header of the tables and then displaying the rows should be based on a list of fields, 
 - [ ] TODO: Handle Lists in QueryArgument
-- [ ] Mutations
+- [x] Mutations
 - [ ] Make the UI look a little nicer
 - [ ] Make the URL editable
 - [ ] Use the typeRef of the argument for displaying the form field
 - [ ] Use the typeRef of the argument for storing the form field
-- [ ] Handle Mutations
+- [x] Handle Mutations
 - [ ] Use the nullability when displaying the form field
 - [ ] Use the nullability when inputting the form field
 - [ ] Use the nullability when making the GraphQL query
@@ -53,7 +53,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Use RemoteData package https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/
 - [x] Get rid of config.json and instead pass it through flags so that it's runtime-configurable
 - [ ] TODO: EverySet type?
-- [ ] Use GraphQL Descriptions in Form Inputs and maybe Table tooltips
+- [x] Use GraphQL Descriptions in Form Inputs and maybe Table tooltips
+- [ ] Don't allow "Run Query" button to be clickable until all required arguments are met
 
 ## Edit View
 - [ ] Config flag to set edit_mode = true

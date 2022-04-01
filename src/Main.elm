@@ -147,7 +147,18 @@ update msg model =
         , activeForm = Nothing
         , activeResponse = Just formName
         } 
-      , submitForm model formName typeRef
+      , let maybeQuery = Dict.get formName model.queries 
+            maybeMutation = Dict.get formName model.mutations 
+        in
+          case maybeQuery of
+            Nothing ->
+              case maybeMutation of
+                  Nothing ->
+                    Cmd.none -- We should never get here
+                  Just mutation ->
+                    submitForm False model formName typeRef
+            Just query ->
+              submitForm True model formName typeRef
       )
 
     SetActiveForm maybeForm ->
@@ -658,10 +669,27 @@ fieldToRowInput path dictTypeDef fieldType =
 
 inputScalarOrEnum : String -> Type.TypeReference -> Html Msg
 inputScalarOrEnum path typeRef =
-  input [ Html.Attributes.class "input"
-                    , Html.Attributes.type_ "text"
-                    , Html.Events.onInput (\x -> UpdateFormAt path (typeRefToArgumentType typeRef) (Just x))
-                    ] []
+  let inputHtml =
+        input [ Html.Attributes.class "input"
+              , Html.Attributes.type_ "text"
+              , Html.Events.onInput (\x -> UpdateFormAt path (typeRefToArgumentType typeRef) (Just x))
+              ] []
+  in
+    case typeRef of
+        Type.TypeReference referrableType isNullable ->
+          case isNullable of
+            Type.Nullable ->
+              div
+                [Html.Attributes.class "field has-addons"]
+                [ div [Html.Attributes.class "control"] [inputHtml]
+                , div [Html.Attributes.class "control"] 
+                  [ a [class "button is-warning"
+                  , Html.Events.onClick (UpdateFormAt path (typeRefToArgumentType typeRef) Nothing)
+                  ] [text "Clear"]
+                  ]
+                ]
+            Type.NonNullable ->
+              inputHtml
 
 typeRefToArgumentType : Type.TypeReference -> ArgumentType
 typeRefToArgumentType (Type.TypeReference referrableType isNullable) =
@@ -739,11 +767,19 @@ typesRequest =
 --       (\result -> let _ = Debug.log "result" result in NoOp)
 --       (Generic.Json.decode)
 
-sendRequest : String -> String -> GraphQl.Operation GraphQl.Query GraphQl.Anonymous -> Cmd Msg
-sendRequest url formName operation =
+sendQueryRequest : String -> String -> GraphQl.Operation GraphQl.Query GraphQl.Anonymous -> Cmd Msg
+sendQueryRequest url formName operation =
   Http.post 
     { url = url
     , body = Http.jsonBody (operation |> GraphQl.query |> GraphQl.toJson) 
+    , expect = Http.expectString (GotQueryResponse formName)
+    }
+
+sendMutationRequest : String -> String -> GraphQl.Operation GraphQl.Mutation GraphQl.Anonymous -> Cmd Msg
+sendMutationRequest url formName operation =
+  Http.post 
+    { url = url
+    , body = Http.jsonBody (operation |> GraphQl.mutation |> GraphQl.toJson) 
     , expect = Http.expectString (GotQueryResponse formName)
     }
 
@@ -755,8 +791,8 @@ runIntrospectionQuery url =
     , expect = Http.expectJson GotIntrospection (Json.Decode.field "data" Parser.decoder)
     }
 
-submitForm : Model -> String -> Type.TypeReference -> Cmd Msg
-submitForm model formName typeRef =
+submitForm : Bool -> Model -> String -> Type.TypeReference -> Cmd Msg
+submitForm isQuery model formName typeRef =
   let formValues = Dict.get formName model.formInput
         |> Maybe.withDefault Dict.empty
         |> Dict.toList
@@ -775,7 +811,10 @@ submitForm model formName typeRef =
         Cmd.none
       
       Just config ->
-        sendRequest config.graphqlEndpoint formName request
+        if isQuery then
+          sendQueryRequest config.graphqlEndpoint formName request
+        else
+          sendMutationRequest config.graphqlEndpoint formName request
 
 queryArgumentToGraphQlAgument : QueryArgument -> GraphQl.Argument
 queryArgumentToGraphQlAgument queryArgument =
