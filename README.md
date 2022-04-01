@@ -36,6 +36,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] typeRefToArgumentType - handle all types
 - [x] argToFormField - send additional type information to UpdateFormInput
 - [x] Handle enum types instead of just string (i.e. GraphQl.string) 
+- [ ] TODO: UnionRef
+- [ ] TODO: Handle Lists in QueryArgument
 - [ ] Mutations
 - [ ] Make the UI look a little nicer
 - [ ] Make the URL editable
@@ -45,7 +47,6 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Use the nullability when displaying the form field
 - [ ] Use the nullability when inputting the form field
 - [ ] Use the nullability when making the GraphQL query
-- [ ] TODO: UnionRef
 - [ ] Enum types in forms
 - [ ] Additional types
 - [ ] Use RemoteData package https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/

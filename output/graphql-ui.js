@@ -5643,10 +5643,6 @@ var $elm$http$Http$BadBody = function (a) {
 	return {$: 'BadBody', a: a};
 };
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
-var $author$project$Main$QueryLeaf = F2(
-	function (a, b) {
-		return {$: 'QueryLeaf', a: a, b: b};
-	});
 var $elm$core$Result$andThen = F2(
 	function (callback, result) {
 		if (result.$ === 'Ok') {
@@ -7172,37 +7168,6 @@ var $krisajenkins$remotedata$RemoteData$fromResult = function (result) {
 		return $krisajenkins$remotedata$RemoteData$Success(x);
 	}
 };
-var $elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
-				switch (_v1.$) {
-					case 'LT':
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 'EQ':
-						return $elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
-			}
-		}
-	});
 var $elm$core$Debug$log = _Debug_log;
 var $author$project$Main$GotIntrospection = function (a) {
 	return {$: 'GotIntrospection', a: a};
@@ -8240,6 +8205,37 @@ var $elm$core$Maybe$isJust = function (maybe) {
 	}
 };
 var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
+var $elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+				switch (_v1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return $elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
+		}
+	});
 var $elm$core$Dict$getMin = function (dict) {
 	getMin:
 	while (true) {
@@ -9308,13 +9304,104 @@ var $author$project$Main$submitForm = F3(
 			return A3($author$project$Main$sendRequest, config.graphqlEndpoint, formName, request);
 		}
 	});
+var $author$project$Main$QueryLeaf = F2(
+	function (a, b) {
+		return {$: 'QueryLeaf', a: a, b: b};
+	});
+var $author$project$Main$QueryNested = function (a) {
+	return {$: 'QueryNested', a: a};
+};
+var $elm$core$List$tail = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(xs);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$Main$nestedQueryArgumentDictUpdate = F4(
+	function (path, argumentType, maybeFormValue, queryArgumentDict) {
+		var _v0 = A2(
+			$elm$core$Debug$log,
+			'List.head path',
+			$elm$core$List$head(path));
+		if (_v0.$ === 'Nothing') {
+			return queryArgumentDict;
+		} else {
+			var head = _v0.a;
+			var tail = A2(
+				$elm$core$Maybe$withDefault,
+				_List_Nil,
+				$elm$core$List$tail(path));
+			return (!$elm$core$List$length(tail)) ? A3(
+				$elm$core$Dict$update,
+				head,
+				function (_v1) {
+					return A2(
+						$elm$core$Maybe$map,
+						function (x) {
+							return A2($author$project$Main$QueryLeaf, x, argumentType);
+						},
+						maybeFormValue);
+				},
+				queryArgumentDict) : A3(
+				$elm$core$Dict$update,
+				head,
+				function (maybeQueryArgument) {
+					if (maybeQueryArgument.$ === 'Nothing') {
+						return $elm$core$Maybe$Just(
+							$author$project$Main$QueryNested(
+								A4($author$project$Main$nestedQueryArgumentDictUpdate, tail, argumentType, maybeFormValue, $elm$core$Dict$empty)));
+					} else {
+						var queryArgument = maybeQueryArgument.a;
+						if (queryArgument.$ === 'QueryLeaf') {
+							return $elm$core$Maybe$Just(
+								$author$project$Main$QueryNested($elm$core$Dict$empty));
+						} else {
+							var dictToUpdate = queryArgument.a;
+							return $elm$core$Maybe$Just(
+								$author$project$Main$QueryNested(
+									A4($author$project$Main$nestedQueryArgumentDictUpdate, tail, argumentType, maybeFormValue, dictToUpdate)));
+						}
+					}
+				},
+				queryArgumentDict);
+		}
+	});
+var $author$project$Main$updateFormAt = F4(
+	function (path, argumentType, maybeFormValue, formDict) {
+		var pathList = A2($elm$core$String$split, '.', path);
+		var pathToUpdate = A2(
+			$elm$core$Maybe$withDefault,
+			_List_Nil,
+			$elm$core$List$tail(pathList));
+		var formName = A2(
+			$elm$core$Maybe$withDefault,
+			'',
+			$elm$core$List$head(pathList));
+		return A3(
+			$elm$core$Dict$update,
+			formName,
+			function (maybeDict) {
+				return $elm$core$Maybe$Just(
+					A4(
+						$author$project$Main$nestedQueryArgumentDictUpdate,
+						pathToUpdate,
+						argumentType,
+						maybeFormValue,
+						A2($elm$core$Maybe$withDefault, $elm$core$Dict$empty, maybeDict)));
+			},
+			formDict);
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		switch (msg.$) {
+		var _v0 = A2($elm$core$Debug$log, 'msg', msg);
+		switch (_v0.$) {
 			case 'NoOp':
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 			case 'GotConfig':
-				var config = msg.a;
+				var config = _v0.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -9333,7 +9420,7 @@ var $author$project$Main$update = F2(
 						$author$project$Main$runIntrospectionQuery(config.graphqlEndpoint));
 				}
 			case 'GotIntrospection':
-				var apiInteractionsResult = msg.a;
+				var apiInteractionsResult = _v0.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -9354,31 +9441,20 @@ var $author$project$Main$update = F2(
 							types: $author$project$Main$apiInteractionsToTypeDict(apiInteractionsResult)
 						}),
 					$elm$core$Platform$Cmd$none);
-			case 'UpdateFormInput':
-				var formName = msg.a;
-				var formField = msg.b;
-				var argumentType = msg.c;
-				var formValue = msg.d;
+			case 'UpdateFormAt':
+				var path = _v0.a;
+				var argumentType = _v0.b;
+				var maybeFormValue = _v0.c;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							formInput: function () {
-								var newFormFieldDict = A3(
-									$elm$core$Dict$insert,
-									formField,
-									A2($author$project$Main$QueryLeaf, formValue, argumentType),
-									A2(
-										$elm$core$Maybe$withDefault,
-										$elm$core$Dict$empty,
-										A2($elm$core$Dict$get, formName, model.formInput)));
-								return A3($elm$core$Dict$insert, formName, newFormFieldDict, model.formInput);
-							}()
+							formInput: A4($author$project$Main$updateFormAt, path, argumentType, maybeFormValue, model.formInput)
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'SubmitForm':
-				var formName = msg.a;
-				var typeRef = msg.b;
+				var formName = _v0.a;
+				var typeRef = _v0.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -9389,22 +9465,22 @@ var $author$project$Main$update = F2(
 						}),
 					A3($author$project$Main$submitForm, model, formName, typeRef));
 			case 'SetActiveForm':
-				var maybeForm = msg.a;
+				var maybeForm = _v0.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{activeForm: maybeForm}),
 					$elm$core$Platform$Cmd$none);
 			case 'SetActiveResponse':
-				var maybeResponse = msg.a;
+				var maybeResponse = _v0.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{activeResponse: maybeResponse}),
 					$elm$core$Platform$Cmd$none);
 			default:
-				var key = msg.a;
-				var result = msg.b;
+				var key = _v0.a;
+				var result = _v0.b;
 				var genericValue = $krisajenkins$remotedata$RemoteData$fromResult(
 					A2(
 						$elm$core$Debug$log,
@@ -9481,65 +9557,12 @@ var $author$project$Main$SubmitForm = F2(
 	function (a, b) {
 		return {$: 'SubmitForm', a: a, b: b};
 	});
-var $author$project$Main$UpdateFormInput = F4(
-	function (a, b, c, d) {
-		return {$: 'UpdateFormInput', a: a, b: b, c: c, d: d};
+var $author$project$Main$UpdateFormAt = F3(
+	function (a, b, c) {
+		return {$: 'UpdateFormAt', a: a, b: b, c: c};
 	});
+var $elm$html$Html$br = _VirtualDom_node('br');
 var $elm$html$Html$input = _VirtualDom_node('input');
-var $elm$html$Html$label = _VirtualDom_node('label');
-var $elm$html$Html$Attributes$name = $elm$html$Html$Attributes$stringProperty('name');
-var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
-var $author$project$Main$nullableField = function (isNullable) {
-	if (isNullable.$ === 'NonNullable') {
-		return $elm$html$Html$text('');
-	} else {
-		return A2(
-			$elm$html$Html$div,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('control')
-				]),
-			_List_fromArray(
-				[
-					A2(
-					$elm$html$Html$label,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('radio')
-						]),
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$input,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$type_('radio'),
-									$elm$html$Html$Attributes$name('nullable')
-								]),
-							_List_Nil),
-							$elm$html$Html$text('Null')
-						])),
-					A2(
-					$elm$html$Html$label,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('radio')
-						]),
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$input,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$type_('radio'),
-									$elm$html$Html$Attributes$name('nullable')
-								]),
-							_List_Nil),
-							$elm$html$Html$text('Value')
-						]))
-				]));
-	}
-};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -9568,8 +9591,9 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
-var $elm$html$Html$pre = _VirtualDom_node('pre');
-var $elm$core$Debug$toString = _Debug_toString;
+var $elm$html$Html$td = _VirtualDom_node('td');
+var $elm$html$Html$th = _VirtualDom_node('th');
+var $elm$html$Html$tr = _VirtualDom_node('tr');
 var $author$project$Main$ArgumentEnum = {$: 'ArgumentEnum'};
 var $author$project$Main$ArgumentString = {$: 'ArgumentString'};
 var $author$project$Main$typeRefToArgumentType = function (_v0) {
@@ -9584,8 +9608,9 @@ var $author$project$Main$typeRefToArgumentType = function (_v0) {
 			return $author$project$Main$ArgumentString;
 	}
 };
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $author$project$Main$argToFormField = F2(
-	function (formName, arg) {
+	function (pathPrefix, arg) {
 		var _v0 = function () {
 			var _v1 = arg.typeRef;
 			var referrableType_ = _v1.a;
@@ -9595,33 +9620,26 @@ var $author$project$Main$argToFormField = F2(
 		var referrableType = _v0.a;
 		var isNullable = _v0.b;
 		return A2(
-			$elm$html$Html$div,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('field')
-				]),
+			$elm$html$Html$tr,
+			_List_Nil,
 			_List_fromArray(
 				[
 					A2(
-					$elm$html$Html$label,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('label')
-						]),
+					$elm$html$Html$th,
+					_List_Nil,
 					_List_fromArray(
 						[
 							$elm$html$Html$text(
-							$author$project$Main$nameToString(arg.name))
+							$author$project$Main$nameToString(arg.name)),
+							A2($elm$html$Html$br, _List_Nil, _List_Nil),
+							$elm$html$Html$text(
+							A2($elm$core$Maybe$withDefault, '', arg.description))
 						])),
 					A2(
-					$elm$html$Html$div,
+					$elm$html$Html$td,
+					_List_Nil,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('control')
-						]),
-					_List_fromArray(
-						[
-							$author$project$Main$nullableField(isNullable),
 							A2(
 							$elm$html$Html$input,
 							_List_fromArray(
@@ -9631,45 +9649,47 @@ var $author$project$Main$argToFormField = F2(
 									$elm$html$Html$Attributes$placeholder(
 									A2($elm$core$Maybe$withDefault, '', arg.description)),
 									$elm$html$Html$Events$onInput(
-									A3(
-										$author$project$Main$UpdateFormInput,
-										formName,
-										$author$project$Main$nameToString(arg.name),
-										$author$project$Main$typeRefToArgumentType(arg.typeRef)))
+									function (x) {
+										return A3(
+											$author$project$Main$UpdateFormAt,
+											pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
+											$author$project$Main$typeRefToArgumentType(arg.typeRef),
+											$elm$core$Maybe$Just(x));
+									})
 								]),
-							_List_Nil),
-							A2(
-							$elm$html$Html$pre,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(
-									$elm$core$Debug$toString(arg.typeRef))
-								]))
+							_List_Nil)
 						]))
 				]));
 	});
+var $elm$html$Html$table = _VirtualDom_node('table');
+var $elm$html$Html$tbody = _VirtualDom_node('tbody');
 var $author$project$Main$fieldTypeToForm = function (fieldType) {
 	return A2(
 		$elm$html$Html$div,
-		_List_Nil,
-		_Utils_ap(
-			A2(
-				$elm$core$List$map,
-				$author$project$Main$argToFormField(
-					$author$project$Main$nameToString(fieldType.name)),
-				fieldType.args),
-			_List_fromArray(
-				[
-					A2(
-					$elm$html$Html$pre,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(
-							$elm$core$Debug$toString(fieldType.typeRef))
-						]))
-				])));
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('table-container')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$table,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('table is-hoverable is-narrow is-bordered')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$tbody,
+						_List_Nil,
+						A2(
+							$elm$core$List$map,
+							$author$project$Main$argToFormField(
+								$author$project$Main$nameToString(fieldType.name)),
+							fieldType.args))
+					]))
+			]));
 };
 var $elm$html$Html$footer = _VirtualDom_node('footer');
 var $elm$html$Html$header = _VirtualDom_node('header');
@@ -9736,6 +9756,8 @@ var $author$project$Main$formModal = function (fieldType) {
 							]),
 						_List_fromArray(
 							[
+								$elm$html$Html$text(
+								A2($elm$core$Maybe$withDefault, '', fieldType.description)),
 								$author$project$Main$fieldTypeToForm(fieldType)
 							])),
 						A2(
@@ -9779,6 +9801,8 @@ var $author$project$Main$formModal = function (fieldType) {
 };
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$li = _VirtualDom_node('li');
+var $elm$html$Html$pre = _VirtualDom_node('pre');
+var $elm$core$Debug$toString = _Debug_toString;
 var $elm$html$Html$ul = _VirtualDom_node('ul');
 var $author$project$Main$apiView = function (model) {
 	var queries = A2(
@@ -9924,10 +9948,6 @@ var $edkv$elm_generic_dict$GenericDict$keys = function (_v0) {
 		_List_Nil,
 		dict);
 };
-var $elm$html$Html$table = _VirtualDom_node('table');
-var $elm$html$Html$tbody = _VirtualDom_node('tbody');
-var $elm$html$Html$td = _VirtualDom_node('td');
-var $elm$html$Html$th = _VirtualDom_node('th');
 var $elm$html$Html$thead = _VirtualDom_node('thead');
 var $author$project$Main$toUtcString = function (time) {
 	return $elm$core$String$fromInt(
@@ -9962,7 +9982,6 @@ var $author$project$Main$toUtcString = function (time) {
 	}() + ('-' + $elm$core$String$fromInt(
 		A2($elm$time$Time$toDay, $elm$time$Time$utc, time)))));
 };
-var $elm$html$Html$tr = _VirtualDom_node('tr');
 var $edkv$elm_generic_dict$GenericDict$values = function (_v0) {
 	var dict = _v0.a;
 	return A3(
@@ -10266,6 +10285,14 @@ var $author$project$Main$view = function (model) {
 					[
 						$elm$html$Html$text(
 						$elm$core$Debug$toString(model.config))
+					])),
+				A2(
+				$elm$html$Html$pre,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$elm$core$Debug$toString(model.formInput))
 					])),
 				A2(
 				$elm$html$Html$button,

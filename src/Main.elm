@@ -50,13 +50,13 @@ type Msg
   | GotConfig (Result Http.Error Config)
   | HitEndpoint
   | GotIntrospection (Result Http.Error ApiInteractions)
-  | UpdateFormInput String String ArgumentType String 
+  | UpdateFormAt String ArgumentType (Maybe String)
   | SubmitForm String Type.TypeReference
   | SetActiveForm (Maybe String)
   | GotQueryResponse String (Result Http.Error String)
   | SetActiveResponse (Maybe String)
 
-type QueryArgument
+type QueryArgument -- TODO: Need to handle lists here
   = QueryLeaf String ArgumentType
   | QueryNested (Dict.Dict String QueryArgument)
 
@@ -104,7 +104,7 @@ flagsToMaybeConfig flags =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  case msg of
+  case Debug.log "msg" msg of
     NoOp ->
       ( model, Cmd.none )
 
@@ -133,19 +133,13 @@ update msg model =
       , Cmd.none
       )
 
-    UpdateFormInput formName formField argumentType formValue  ->
+    UpdateFormAt path argumentType maybeFormValue ->
       ( { model 
-        | formInput = 
-            let newFormFieldDict = model.formInput 
-                  |> Dict.get formName
-                  |> Maybe.withDefault Dict.empty
-                  |> Dict.insert formField (QueryLeaf formValue argumentType)
-            in
-              Dict.insert formName newFormFieldDict model.formInput
+        | formInput = updateFormAt path argumentType maybeFormValue model.formInput
         } 
       , Cmd.none
       )
-    
+
     SubmitForm formName typeRef ->
       ( { model 
         | response = model.response |> Dict.insert formName (RemoteData.Loading)
@@ -165,6 +159,54 @@ update msg model =
       let genericValue = Debug.log "genericValue" (Result.andThen (\x -> Result.mapError Http.BadBody (Generic.Json.decode x)) result ) |> RemoteData.fromResult
       in
         ( { model | response = model.response |> Dict.insert key genericValue} , Cmd.none)
+
+updateFormAt : String -> ArgumentType -> Maybe String -> (Dict.Dict String (Dict.Dict String QueryArgument)) -> (Dict.Dict String (Dict.Dict String QueryArgument))
+updateFormAt path argumentType maybeFormValue formDict =
+  let pathList = String.split "." path -- List String
+      formName = Maybe.withDefault "" (List.head pathList) -- String
+      pathToUpdate = List.tail pathList |> Maybe.withDefault [] -- List String
+        
+  in 
+    formDict
+    |> Dict.update formName
+      (\maybeDict ->
+        maybeDict
+        |> Maybe.withDefault Dict.empty
+        |> nestedQueryArgumentDictUpdate pathToUpdate argumentType maybeFormValue
+        |> Just
+      )
+
+nestedQueryArgumentDictUpdate : List String -> ArgumentType -> Maybe String -> (Dict.Dict String QueryArgument) -> (Dict.Dict String QueryArgument)
+nestedQueryArgumentDictUpdate path argumentType maybeFormValue queryArgumentDict =
+  case Debug.log "List.head path" <| List.head path of
+      Nothing ->
+        queryArgumentDict
+
+      Just head ->
+        let tail = path |> List.tail |> Maybe.withDefault []
+        in
+          if List.length tail == 0 then
+              queryArgumentDict
+              |> Dict.update head
+                  (\_ ->
+                    maybeFormValue |> Maybe.map (\x -> QueryLeaf x argumentType)
+                  )
+          else
+              queryArgumentDict
+              |> Dict.update head
+                  (\maybeQueryArgument ->
+                    case maybeQueryArgument of
+                        Nothing -> -- Insert using empty Dict
+                          Just (QueryNested (nestedQueryArgumentDictUpdate tail argumentType maybeFormValue Dict.empty))
+                        
+                        Just queryArgument ->
+                          case queryArgument of
+                            QueryLeaf _  _ -> -- THIS SHOULD BE AN IMPOSSIBLE PATH BECAUSE there's more to update
+                              Just (QueryNested Dict.empty)
+                            
+                            QueryNested dictToUpdate ->
+                              Just (QueryNested (nestedQueryArgumentDictUpdate tail argumentType maybeFormValue dictToUpdate))
+                  )
 
 apiInteractionsToFieldDict : Result Http.Error ApiInteractions -> (ApiInteractions -> List Type.TypeDefinition) -> Dict.Dict String Type.Field
 apiInteractionsToFieldDict res queryOrMutation =
@@ -216,6 +258,7 @@ view : Model -> Html Msg
 view model =
   div [Html.Attributes.class "container"]
       [ pre [] [text (Debug.toString model.config)]
+      , pre [] [text (Debug.toString model.formInput)]
       , button [Html.Attributes.class "button is-large is-success" , Html.Events.onClick HitEndpoint ] [text "Introspect!"]
       , h1 [Html.Attributes.class "title"] [text "Responses"]
       , tabView model.activeResponse model.response
@@ -519,11 +562,20 @@ fieldTypeToButton fieldType =
 
 fieldTypeToForm : Type.Field -> Html Msg
 fieldTypeToForm fieldType =
-  div [] 
-    (
-      (List.map (argToFormField (nameToString fieldType.name)) fieldType.args) ++
-      [ pre [] [text (Debug.toString fieldType.typeRef)] ]
-    )
+  div
+    [ Html.Attributes.class "table-container" ]
+    [ table 
+      [ Html.Attributes.class "table is-hoverable is-narrow is-bordered"]
+      [ tbody 
+        []
+        (List.map (argToFormField (nameToString fieldType.name) ) fieldType.args)
+      ] 
+    ]
+  -- div [] 
+  --   (
+  --     (List.map (argToFormField (nameToString fieldType.name)) fieldType.args) ++
+  --     [ pre [] [text (Debug.toString fieldType.typeRef)] ]
+  --   )
 
 formModal : Type.Field -> Html Msg
 formModal fieldType = 
@@ -538,7 +590,9 @@ formModal fieldType =
                   []
               ]
           , section [ class "modal-card-body" ]
-              [ fieldTypeToForm fieldType ]
+              [ text (Maybe.withDefault "" fieldType.description)
+              , fieldTypeToForm fieldType 
+              ]
           , footer [ class "modal-card-foot" ]
               [ button [ Html.Attributes.class "button is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name) fieldType.typeRef) ] [text "Run Query"]
               , button [ class "button", Html.Events.onClick (SetActiveForm Nothing) ]
@@ -548,26 +602,44 @@ formModal fieldType =
       ]
 
 argToFormField : String -> Type.Arg -> Html Msg
-argToFormField formName arg =
+argToFormField pathPrefix arg =
   let (referrableType, isNullable) =
         case arg.typeRef of
             Type.TypeReference referrableType_ isNullable_ ->
               (referrableType_, isNullable_)
   in
-    div
-      [ Html.Attributes.class "field" ]
-      [ label [Html.Attributes.class "label"] [text (nameToString arg.name) ] 
-      , div 
-        [ Html.Attributes.class "control" ] 
-        [ nullableField isNullable
-        , input [ Html.Attributes.class "input"
+    tr
+      []
+      [ th [] [text (nameToString arg.name), br [] [], text (Maybe.withDefault "" arg.description)]
+      , td [] 
+      [ input [ Html.Attributes.class "input"
                 , Html.Attributes.type_ "text"
                 , Html.Attributes.placeholder (arg.description |> Maybe.withDefault "") 
-                , Html.Events.onInput (UpdateFormInput formName (nameToString arg.name) (typeRefToArgumentType arg.typeRef) )
+                , Html.Events.onInput (\x -> UpdateFormAt (pathPrefix ++ "." ++ (nameToString arg.name)) (typeRefToArgumentType arg.typeRef) (Just x))
                 ] []
-        , pre [] [text (Debug.toString arg.typeRef)]
-        ]
+
       ]
+      ]
+    -- TODO: Since the field can be deeply nested, we need a function that sets "at" "addProduct.input.salesForceProductCode"
+    -- TODO: That means that instead of formName, this should take a prefix argument and pass the prefix + field when calling the nested view
+    -- TODO: Nullable types should have a "+" button when null, and an "x" button to set null
+    -- TODO: Switch on types
+    -- TODO: Enums should be dropdowns
+    -- div
+    --   [ Html.Attributes.class "field" ]
+    --   [ label [Html.Attributes.class "label"] [text (nameToString arg.name) ] 
+    --   , div 
+    --     [ Html.Attributes.class "control" ] 
+    --     [ nullableField isNullable
+    --     , input [ Html.Attributes.class "input"
+    --             , Html.Attributes.type_ "text"
+    --             , Html.Attributes.placeholder (arg.description |> Maybe.withDefault "") 
+    --             , Html.Events.onInput (UpdateFormInput formName (nameToString arg.name) (typeRefToArgumentType arg.typeRef) )
+    --             ] []
+    --     , pre [] [text (Debug.toString arg.typeRef)]
+    --     ]
+    --   ]
+
 
 typeRefToArgumentType : Type.TypeReference -> ArgumentType
 typeRefToArgumentType (Type.TypeReference referrableType isNullable) =
