@@ -37,6 +37,7 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] argToFormField - send additional type information to UpdateFormInput
 - [x] Handle enum types instead of just string (i.e. GraphQl.string) 
 - [ ] TODO: UnionRef
+- [ ] Displaying UnionRef tables is probably wrong -- need to account for all fields first when constructing the header of the tables and then displaying the rows should be based on a list of fields, 
 - [ ] TODO: Handle Lists in QueryArgument
 - [ ] Mutations
 - [ ] Make the UI look a little nicer

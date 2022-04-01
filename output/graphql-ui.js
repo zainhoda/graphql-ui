@@ -9557,11 +9557,11 @@ var $author$project$Main$SubmitForm = F2(
 	function (a, b) {
 		return {$: 'SubmitForm', a: a, b: b};
 	});
+var $elm$html$Html$br = _VirtualDom_node('br');
 var $author$project$Main$UpdateFormAt = F3(
 	function (a, b, c) {
 		return {$: 'UpdateFormAt', a: a, b: b, c: c};
 	});
-var $elm$html$Html$br = _VirtualDom_node('br');
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -9590,10 +9590,6 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
-var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
-var $elm$html$Html$td = _VirtualDom_node('td');
-var $elm$html$Html$th = _VirtualDom_node('th');
-var $elm$html$Html$tr = _VirtualDom_node('tr');
 var $author$project$Main$ArgumentEnum = {$: 'ArgumentEnum'};
 var $author$project$Main$ArgumentString = {$: 'ArgumentString'};
 var $author$project$Main$typeRefToArgumentType = function (_v0) {
@@ -9609,8 +9605,85 @@ var $author$project$Main$typeRefToArgumentType = function (_v0) {
 	}
 };
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
-var $author$project$Main$argToFormField = F2(
-	function (pathPrefix, arg) {
+var $author$project$Main$inputScalarOrEnum = F2(
+	function (path, typeRef) {
+		return A2(
+			$elm$html$Html$input,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('input'),
+					$elm$html$Html$Attributes$type_('text'),
+					$elm$html$Html$Events$onInput(
+					function (x) {
+						return A3(
+							$author$project$Main$UpdateFormAt,
+							path,
+							$author$project$Main$typeRefToArgumentType(typeRef),
+							$elm$core$Maybe$Just(x));
+					})
+				]),
+			_List_Nil);
+	});
+var $elm$html$Html$td = _VirtualDom_node('td');
+var $elm$html$Html$th = _VirtualDom_node('th');
+var $elm$html$Html$tr = _VirtualDom_node('tr');
+var $elm$html$Html$b = _VirtualDom_node('b');
+var $author$project$Main$fieldToRowInput = F3(
+	function (path, dictTypeDef, fieldType) {
+		return A2(
+			$elm$html$Html$tr,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$td,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$b,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									$author$project$Main$nameToString(fieldType.name))
+								])),
+							A2($elm$html$Html$br, _List_Nil, _List_Nil),
+							$elm$html$Html$text(
+							A2($elm$core$Maybe$withDefault, '', fieldType.description))
+						])),
+					A2(
+					$elm$html$Html$td,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$author$project$Main$inputScalarOrEnum,
+							path + ('.' + $author$project$Main$nameToString(fieldType.name)),
+							fieldType.typeRef)
+						]))
+				]));
+	});
+var $author$project$Main$typeDefToForm = F3(
+	function (path, dictTypeDef, _v0) {
+		var classCaseName = _v0.a;
+		var definableType = _v0.b;
+		var maybeDescription = _v0.c;
+		if (definableType.$ === 'InputObjectType') {
+			var listOfField = definableType.a;
+			return A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				A2(
+					$elm$core$List$map,
+					A2($author$project$Main$fieldToRowInput, path, dictTypeDef),
+					listOfField));
+		} else {
+			return $elm$html$Html$text('TODO: Handle Other Types of Type Definitions in the Input');
+		}
+	});
+var $author$project$Main$argToFormField = F3(
+	function (pathPrefix, dictTypeDef, arg) {
 		var _v0 = function () {
 			var _v1 = arg.typeRef;
 			var referrableType_ = _v1.a;
@@ -9619,6 +9692,35 @@ var $author$project$Main$argToFormField = F2(
 		}();
 		var referrableType = _v0.a;
 		var isNullable = _v0.b;
+		var inputHtml = function () {
+			switch (referrableType.$) {
+				case 'Scalar':
+					return A2(
+						$author$project$Main$inputScalarOrEnum,
+						pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
+						arg.typeRef);
+				case 'EnumRef':
+					return A2(
+						$author$project$Main$inputScalarOrEnum,
+						pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
+						arg.typeRef);
+				case 'InputObjectRef':
+					var objectClassCaseName = referrableType.a;
+					var objectName = $author$project$Graphql$Parser$ClassCaseName$raw(objectClassCaseName);
+					return A2(
+						$elm$core$Maybe$withDefault,
+						$elm$html$Html$text(objectName + ' not found in the Dict of all objects'),
+						A2(
+							$elm$core$Maybe$map,
+							A2(
+								$author$project$Main$typeDefToForm,
+								pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
+								dictTypeDef),
+							A2($elm$core$Dict$get, objectName, dictTypeDef)));
+				default:
+					return $elm$html$Html$text('TODO: Unhandled Argument');
+			}
+		}();
 		return A2(
 			$elm$html$Html$tr,
 			_List_Nil,
@@ -9639,171 +9741,186 @@ var $author$project$Main$argToFormField = F2(
 					$elm$html$Html$td,
 					_List_Nil,
 					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$input,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$class('input'),
-									$elm$html$Html$Attributes$type_('text'),
-									$elm$html$Html$Attributes$placeholder(
-									A2($elm$core$Maybe$withDefault, '', arg.description)),
-									$elm$html$Html$Events$onInput(
-									function (x) {
-										return A3(
-											$author$project$Main$UpdateFormAt,
-											pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
-											$author$project$Main$typeRefToArgumentType(arg.typeRef),
-											$elm$core$Maybe$Just(x));
-									})
-								]),
-							_List_Nil)
-						]))
+						[inputHtml]))
 				]));
 	});
 var $elm$html$Html$table = _VirtualDom_node('table');
 var $elm$html$Html$tbody = _VirtualDom_node('tbody');
-var $author$project$Main$fieldTypeToForm = function (fieldType) {
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('table-container')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$table,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('table is-hoverable is-narrow is-bordered')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$tbody,
-						_List_Nil,
-						A2(
-							$elm$core$List$map,
-							$author$project$Main$argToFormField(
-								$author$project$Main$nameToString(fieldType.name)),
-							fieldType.args))
-					]))
-			]));
-};
+var $author$project$Main$fieldArgumentsToForm = F3(
+	function (path, dictTypeDef, fieldType) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('table-container')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$table,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('table is-hoverable is-narrow is-bordered')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$tbody,
+							_List_Nil,
+							A2(
+								$elm$core$List$map,
+								A2($author$project$Main$argToFormField, path, dictTypeDef),
+								fieldType.args))
+						]))
+				]));
+	});
 var $elm$html$Html$footer = _VirtualDom_node('footer');
 var $elm$html$Html$header = _VirtualDom_node('header');
 var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$html$Html$section = _VirtualDom_node('section');
-var $author$project$Main$formModal = function (fieldType) {
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('modal is-active')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('modal-background')
-					]),
-				_List_Nil),
-				A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('modal-card')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$header,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('modal-card-head')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$p,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$class('modal-card-title')
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text(
-										$author$project$Main$nameToString(fieldType.name))
-									])),
-								A2(
-								$elm$html$Html$button,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$class('delete'),
-										$elm$html$Html$Events$onClick(
-										$author$project$Main$SetActiveForm($elm$core$Maybe$Nothing))
-									]),
-								_List_Nil)
-							])),
-						A2(
-						$elm$html$Html$section,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('modal-card-body')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text(
-								A2($elm$core$Maybe$withDefault, '', fieldType.description)),
-								$author$project$Main$fieldTypeToForm(fieldType)
-							])),
-						A2(
-						$elm$html$Html$footer,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('modal-card-foot')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$button,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$class('button is-success'),
-										$elm$html$Html$Events$onClick(
-										A2(
-											$author$project$Main$SubmitForm,
-											$author$project$Main$nameToString(fieldType.name),
-											fieldType.typeRef))
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Run Query')
-									])),
-								A2(
-								$elm$html$Html$button,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$class('button'),
-										$elm$html$Html$Events$onClick(
-										$author$project$Main$SetActiveForm($elm$core$Maybe$Nothing))
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Cancel')
-									]))
-							]))
-					]))
-			]));
-};
+var $author$project$Main$formModal = F2(
+	function (dictTypeDef, fieldType) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('modal is-active')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('modal-background')
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('modal-card')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$header,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('modal-card-head')
+								]),
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$p,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('modal-card-title')
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text(
+											$author$project$Main$nameToString(fieldType.name))
+										])),
+									A2(
+									$elm$html$Html$button,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('delete'),
+											$elm$html$Html$Events$onClick(
+											$author$project$Main$SetActiveForm($elm$core$Maybe$Nothing))
+										]),
+									_List_Nil)
+								])),
+							A2(
+							$elm$html$Html$section,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('modal-card-body')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									A2($elm$core$Maybe$withDefault, '', fieldType.description)),
+									A3(
+									$author$project$Main$fieldArgumentsToForm,
+									$author$project$Main$nameToString(fieldType.name),
+									dictTypeDef,
+									fieldType)
+								])),
+							A2(
+							$elm$html$Html$footer,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('modal-card-foot')
+								]),
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$button,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('button is-success'),
+											$elm$html$Html$Events$onClick(
+											A2(
+												$author$project$Main$SubmitForm,
+												$author$project$Main$nameToString(fieldType.name),
+												fieldType.typeRef))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Run Query')
+										])),
+									A2(
+									$elm$html$Html$button,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('button'),
+											$elm$html$Html$Events$onClick(
+											$author$project$Main$SetActiveForm($elm$core$Maybe$Nothing))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Cancel')
+										]))
+								]))
+						]))
+				]));
+	});
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$html$Html$pre = _VirtualDom_node('pre');
 var $elm$core$Debug$toString = _Debug_toString;
 var $elm$html$Html$ul = _VirtualDom_node('ul');
+var $elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3($elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
+	});
+var $elm$core$Dict$union = F2(
+	function (t1, t2) {
+		return A3($elm$core$Dict$foldl, $elm$core$Dict$insert, t2, t1);
+	});
 var $author$project$Main$apiView = function (model) {
 	var queries = A2(
 		$elm$core$List$map,
@@ -9830,8 +9947,11 @@ var $author$project$Main$apiView = function (model) {
 					$elm$html$Html$text('Something went wrong -- the activeForm wasn\'t found in the queries'),
 					A2(
 						$elm$core$Maybe$map,
-						$author$project$Main$formModal,
-						A2($elm$core$Dict$get, activeForm, model.queries)));
+						$author$project$Main$formModal(model.types),
+						A2(
+							$elm$core$Dict$get,
+							activeForm,
+							A2($elm$core$Dict$union, model.queries, model.mutations))));
 			},
 			model.activeForm));
 	var baseTypes = A2(

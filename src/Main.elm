@@ -25,6 +25,7 @@ import Generic.Json
 import GenericDict
 import RemoteData
 import Time
+import Graphql.Parser.Scalar exposing (Scalar(..))
 
 -- TYPES
 type alias Flags = Json.Decode.Value
@@ -300,9 +301,9 @@ apiView model =
         model.activeForm
         |> Maybe.map 
           (\activeForm ->
-            model.queries
+            (Dict.union model.queries model.mutations)
             |> Dict.get activeForm
-            |> Maybe.map formModal
+            |> Maybe.map (formModal model.types)
             |> Maybe.withDefault (text "Something went wrong -- the activeForm wasn't found in the queries")
           )
         |> Maybe.withDefault (text "")
@@ -560,25 +561,20 @@ fieldTypeToButton fieldType =
       ] 
       [text formName]
 
-fieldTypeToForm : Type.Field -> Html Msg
-fieldTypeToForm fieldType =
+fieldArgumentsToForm : String -> Dict.Dict String Type.TypeDefinition -> Type.Field -> Html Msg
+fieldArgumentsToForm path dictTypeDef fieldType =
   div
     [ Html.Attributes.class "table-container" ]
     [ table 
       [ Html.Attributes.class "table is-hoverable is-narrow is-bordered"]
       [ tbody 
         []
-        (List.map (argToFormField (nameToString fieldType.name) ) fieldType.args)
+        (List.map (argToFormField path dictTypeDef) fieldType.args)
       ] 
     ]
-  -- div [] 
-  --   (
-  --     (List.map (argToFormField (nameToString fieldType.name)) fieldType.args) ++
-  --     [ pre [] [text (Debug.toString fieldType.typeRef)] ]
-  --   )
 
-formModal : Type.Field -> Html Msg
-formModal fieldType = 
+formModal : Dict.Dict String Type.TypeDefinition -> Type.Field -> Html Msg
+formModal dictTypeDef fieldType = 
   div [ class "modal is-active" ]
       [ div [ class "modal-background" ]
           []
@@ -591,7 +587,7 @@ formModal fieldType =
               ]
           , section [ class "modal-card-body" ]
               [ text (Maybe.withDefault "" fieldType.description)
-              , fieldTypeToForm fieldType 
+              , fieldArgumentsToForm (nameToString fieldType.name) dictTypeDef fieldType 
               ]
           , footer [ class "modal-card-foot" ]
               [ button [ Html.Attributes.class "button is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name) fieldType.typeRef) ] [text "Run Query"]
@@ -601,45 +597,71 @@ formModal fieldType =
           ]
       ]
 
-argToFormField : String -> Type.Arg -> Html Msg
-argToFormField pathPrefix arg =
+argToFormField : String -> Dict.Dict String Type.TypeDefinition -> Type.Arg  -> Html Msg
+argToFormField pathPrefix dictTypeDef arg =
   let (referrableType, isNullable) =
         case arg.typeRef of
             Type.TypeReference referrableType_ isNullable_ ->
               (referrableType_, isNullable_)
+
+      inputHtml =
+        case referrableType of
+            Type.Scalar _ ->
+              inputScalarOrEnum (pathPrefix ++ "." ++ (nameToString arg.name)) arg.typeRef
+
+            Type.EnumRef _ ->
+              inputScalarOrEnum (pathPrefix ++ "." ++ (nameToString arg.name)) arg.typeRef
+
+            Type.InputObjectRef objectClassCaseName ->
+              let objectName = (Graphql.Parser.ClassCaseName.raw objectClassCaseName)
+              in
+                dictTypeDef
+                |> Dict.get objectName
+                |> Maybe.map (typeDefToForm (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef)
+                |> Maybe.withDefault (text (objectName ++ " not found in the Dict of all objects"))
+            _ ->
+              text "TODO: Unhandled Argument"
   in
     tr
       []
       [ th [] [text (nameToString arg.name), br [] [], text (Maybe.withDefault "" arg.description)]
       , td [] 
-      [ input [ Html.Attributes.class "input"
-                , Html.Attributes.type_ "text"
-                , Html.Attributes.placeholder (arg.description |> Maybe.withDefault "") 
-                , Html.Events.onInput (\x -> UpdateFormAt (pathPrefix ++ "." ++ (nameToString arg.name)) (typeRefToArgumentType arg.typeRef) (Just x))
-                ] []
-
+        [ inputHtml
+        ]
       ]
-      ]
-    -- TODO: Since the field can be deeply nested, we need a function that sets "at" "addProduct.input.salesForceProductCode"
-    -- TODO: That means that instead of formName, this should take a prefix argument and pass the prefix + field when calling the nested view
+    -- TODO: Show object nesting
+    -- TODO: Switch on types, including object types
+    -- TODO: The input value needs to be available in this context for pre-population as well as deciding to set/unset nullable values
     -- TODO: Nullable types should have a "+" button when null, and an "x" button to set null
-    -- TODO: Switch on types
     -- TODO: Enums should be dropdowns
-    -- div
-    --   [ Html.Attributes.class "field" ]
-    --   [ label [Html.Attributes.class "label"] [text (nameToString arg.name) ] 
-    --   , div 
-    --     [ Html.Attributes.class "control" ] 
-    --     [ nullableField isNullable
-    --     , input [ Html.Attributes.class "input"
-    --             , Html.Attributes.type_ "text"
-    --             , Html.Attributes.placeholder (arg.description |> Maybe.withDefault "") 
-    --             , Html.Events.onInput (UpdateFormInput formName (nameToString arg.name) (typeRefToArgumentType arg.typeRef) )
-    --             ] []
-    --     , pre [] [text (Debug.toString arg.typeRef)]
-    --     ]
-    --   ]
 
+typeDefToForm : String -> Dict.Dict String Type.TypeDefinition -> Type.TypeDefinition -> Html Msg
+typeDefToForm path dictTypeDef (Type.TypeDefinition classCaseName definableType maybeDescription) =
+  case definableType of
+    Type.InputObjectType listOfField ->
+      List.map (fieldToRowInput (path) dictTypeDef) listOfField
+      |> div []
+    _ ->
+      text "TODO: Handle Other Types of Type Definitions in the Input"
+        
+fieldToRowInput : String -> Dict.Dict String Type.TypeDefinition -> Type.Field -> Html Msg
+fieldToRowInput path dictTypeDef fieldType =
+  tr 
+    []
+    [ td [] 
+      [ b [] [text (nameToString fieldType.name)]
+      , br [] []
+      , text (Maybe.withDefault "" fieldType.description)
+      ]
+    , td [] [inputScalarOrEnum (path++"."++(nameToString fieldType.name)) fieldType.typeRef]
+    ]
+
+inputScalarOrEnum : String -> Type.TypeReference -> Html Msg
+inputScalarOrEnum path typeRef =
+  input [ Html.Attributes.class "input"
+                    , Html.Attributes.type_ "text"
+                    , Html.Events.onInput (\x -> UpdateFormAt path (typeRefToArgumentType typeRef) (Just x))
+                    ] []
 
 typeRefToArgumentType : Type.TypeReference -> ArgumentType
 typeRefToArgumentType (Type.TypeReference referrableType isNullable) =
@@ -791,7 +813,7 @@ typeRefToSelectors depth dictTypeDef (Type.TypeReference referrableType isNullab
             (\x -> x)
       Type.UnionRef unionName ->
         GraphQl.withSelectors [ GraphQl.field "__typename"] -- TODO: Need to expand this. Lookup the union and do the proper ... on query
-      _ ->
+      _ -> -- TODO: Are other types even semantically possible in this context?
         GraphQl.withSelectors [ GraphQl.field "id" ]
 
 typeDefToSelectors: Int -> Dict.Dict String Type.TypeDefinition -> Type.TypeDefinition -> GraphQl.Field a -> GraphQl.Field a
