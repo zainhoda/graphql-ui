@@ -9639,7 +9639,7 @@ var $author$project$Main$typeRefToArgumentType = function (_v0) {
 };
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Main$inputScalarOrEnum = F3(
+var $author$project$Main$inputFromTypeRef = F3(
 	function (path, dictTypeDef, typeRef) {
 		var inputHtml = function (refType) {
 			switch (refType.$) {
@@ -9812,7 +9812,7 @@ var $author$project$Main$fieldToRowInput = F3(
 					_List_fromArray(
 						[
 							A3(
-							$author$project$Main$inputScalarOrEnum,
+							$author$project$Main$inputFromTypeRef,
 							path + ('.' + $author$project$Main$nameToString(fieldType.name)),
 							dictTypeDef,
 							fieldType.typeRef)
@@ -9851,13 +9851,13 @@ var $author$project$Main$argToFormField = F3(
 			switch (referrableType.$) {
 				case 'Scalar':
 					return A3(
-						$author$project$Main$inputScalarOrEnum,
+						$author$project$Main$inputFromTypeRef,
 						pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
 						dictTypeDef,
 						arg.typeRef);
 				case 'EnumRef':
 					return A3(
-						$author$project$Main$inputScalarOrEnum,
+						$author$project$Main$inputFromTypeRef,
 						pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
 						dictTypeDef,
 						arg.typeRef);

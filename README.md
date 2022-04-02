@@ -33,6 +33,9 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [x] Tables/FieldViewer from Query Results
 - [x] argToFormField - lookup enum values (show fields for any kind of TypeReference actually)
+- [x] inputScalarOrEnum should be renamed to inputFromTypeRef
+- [ ] Move case Type.InputObjectRef objectClassCaseName to inputFromTypeRef
+- [ ] Handle all types
 - [ ] typeRefToArgumentType - handle all types
 - [x] argToFormField - send additional type information to UpdateFormInput
 - [x] Handle enum types instead of just string (i.e. GraphQl.string) 

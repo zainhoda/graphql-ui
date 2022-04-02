@@ -618,10 +618,10 @@ argToFormField pathPrefix dictTypeDef arg =
       inputHtml =
         case referrableType of
             Type.Scalar _ ->
-              inputScalarOrEnum (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
+              inputFromTypeRef (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
 
             Type.EnumRef _ ->
-              inputScalarOrEnum (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
+              inputFromTypeRef (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
 
             Type.InputObjectRef objectClassCaseName ->
               let objectName = (Graphql.Parser.ClassCaseName.raw objectClassCaseName)
@@ -663,11 +663,11 @@ fieldToRowInput path dictTypeDef fieldType =
       , br [] []
       , text (Maybe.withDefault "" fieldType.description)
       ]
-    , td [] [inputScalarOrEnum (path++"."++(nameToString fieldType.name)) dictTypeDef fieldType.typeRef]
+    , td [] [inputFromTypeRef (path++"."++(nameToString fieldType.name)) dictTypeDef fieldType.typeRef]
     ]
 
-inputScalarOrEnum : String -> Dict.Dict String Type.TypeDefinition -> Type.TypeReference -> Html Msg
-inputScalarOrEnum path dictTypeDef typeRef =
+inputFromTypeRef : String -> Dict.Dict String Type.TypeDefinition -> Type.TypeReference -> Html Msg
+inputFromTypeRef path dictTypeDef typeRef =
   let inputHtml refType =
         case refType of
           Type.Scalar _ ->          
