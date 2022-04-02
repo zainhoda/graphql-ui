@@ -618,10 +618,10 @@ argToFormField pathPrefix dictTypeDef arg =
       inputHtml =
         case referrableType of
             Type.Scalar _ ->
-              inputScalarOrEnum (pathPrefix ++ "." ++ (nameToString arg.name)) arg.typeRef
+              inputScalarOrEnum (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
 
             Type.EnumRef _ ->
-              inputScalarOrEnum (pathPrefix ++ "." ++ (nameToString arg.name)) arg.typeRef
+              inputScalarOrEnum (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
 
             Type.InputObjectRef objectClassCaseName ->
               let objectName = (Graphql.Parser.ClassCaseName.raw objectClassCaseName)
@@ -644,7 +644,6 @@ argToFormField pathPrefix dictTypeDef arg =
     -- TODO: Switch on types, including object types
     -- TODO: The input value needs to be available in this context for pre-population as well as deciding to set/unset nullable values
     -- TODO: Nullable types should have a "+" button when null, and an "x" button to set null
-    -- TODO: Enums should be dropdowns
 
 typeDefToForm : String -> Dict.Dict String Type.TypeDefinition -> Type.TypeDefinition -> Html Msg
 typeDefToForm path dictTypeDef (Type.TypeDefinition classCaseName definableType maybeDescription) =
@@ -664,16 +663,43 @@ fieldToRowInput path dictTypeDef fieldType =
       , br [] []
       , text (Maybe.withDefault "" fieldType.description)
       ]
-    , td [] [inputScalarOrEnum (path++"."++(nameToString fieldType.name)) fieldType.typeRef]
+    , td [] [inputScalarOrEnum (path++"."++(nameToString fieldType.name)) dictTypeDef fieldType.typeRef]
     ]
 
-inputScalarOrEnum : String -> Type.TypeReference -> Html Msg
-inputScalarOrEnum path typeRef =
-  let inputHtml =
-        input [ Html.Attributes.class "input"
-              , Html.Attributes.type_ "text"
-              , Html.Events.onInput (\x -> UpdateFormAt path (typeRefToArgumentType typeRef) (Just x))
-              ] []
+inputScalarOrEnum : String -> Dict.Dict String Type.TypeDefinition -> Type.TypeReference -> Html Msg
+inputScalarOrEnum path dictTypeDef typeRef =
+  let inputHtml refType =
+        case refType of
+          Type.Scalar _ ->          
+            input [ Html.Attributes.class "input"
+                  , Html.Attributes.type_ "text"
+                  , Html.Events.onInput (\x -> UpdateFormAt path (typeRefToArgumentType typeRef) (Just x))
+                  ] []
+
+          Type.EnumRef classCaseName ->
+            let availableValues =
+                  dictTypeDef
+                  |> Dict.get (Graphql.Parser.ClassCaseName.raw classCaseName)
+                  |> Maybe.map
+                      (\x ->
+                        case x of
+                            Type.TypeDefinition _ definableType maybeDescription ->
+                              case definableType of
+                                  Type.EnumType listEnumValue ->
+                                    listEnumValue |> List.map (\y -> Graphql.Parser.ClassCaseName.raw y.name)
+                                  _ ->
+                                    []
+                      )
+                  |> Maybe.withDefault []
+            in
+              div [Html.Attributes.class "select"]
+              [ select [Html.Events.onInput (\a -> UpdateFormAt path (typeRefToArgumentType typeRef) (Just a))]
+                ( availableValues
+                |> List.map (\z -> option [Html.Attributes.value z] [text z])
+                )
+              ]
+          _ ->
+            text ""
   in
     case typeRef of
         Type.TypeReference referrableType isNullable ->
@@ -681,7 +707,7 @@ inputScalarOrEnum path typeRef =
             Type.Nullable ->
               div
                 [Html.Attributes.class "field has-addons"]
-                [ div [Html.Attributes.class "control"] [inputHtml]
+                [ div [Html.Attributes.class "control"] [inputHtml referrableType]
                 , div [Html.Attributes.class "control"] 
                   [ a [class "button is-warning"
                   , Html.Events.onClick (UpdateFormAt path (typeRefToArgumentType typeRef) Nothing)
@@ -689,7 +715,7 @@ inputScalarOrEnum path typeRef =
                   ]
                 ]
             Type.NonNullable ->
-              inputHtml
+              inputHtml referrableType
 
 typeRefToArgumentType : Type.TypeReference -> ArgumentType
 typeRefToArgumentType (Type.TypeReference referrableType isNullable) =

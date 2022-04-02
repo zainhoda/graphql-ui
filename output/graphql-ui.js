@@ -9621,6 +9621,8 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
+var $elm$html$Html$option = _VirtualDom_node('option');
+var $elm$html$Html$select = _VirtualDom_node('select');
 var $author$project$Main$ArgumentEnum = {$: 'ArgumentEnum'};
 var $author$project$Main$ArgumentString = {$: 'ArgumentString'};
 var $author$project$Main$typeRefToArgumentType = function (_v0) {
@@ -9636,24 +9638,95 @@ var $author$project$Main$typeRefToArgumentType = function (_v0) {
 	}
 };
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
-var $author$project$Main$inputScalarOrEnum = F2(
-	function (path, typeRef) {
-		var inputHtml = A2(
-			$elm$html$Html$input,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('input'),
-					$elm$html$Html$Attributes$type_('text'),
-					$elm$html$Html$Events$onInput(
-					function (x) {
-						return A3(
-							$author$project$Main$UpdateFormAt,
-							path,
-							$author$project$Main$typeRefToArgumentType(typeRef),
-							$elm$core$Maybe$Just(x));
-					})
-				]),
-			_List_Nil);
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Main$inputScalarOrEnum = F3(
+	function (path, dictTypeDef, typeRef) {
+		var inputHtml = function (refType) {
+			switch (refType.$) {
+				case 'Scalar':
+					return A2(
+						$elm$html$Html$input,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('input'),
+								$elm$html$Html$Attributes$type_('text'),
+								$elm$html$Html$Events$onInput(
+								function (x) {
+									return A3(
+										$author$project$Main$UpdateFormAt,
+										path,
+										$author$project$Main$typeRefToArgumentType(typeRef),
+										$elm$core$Maybe$Just(x));
+								})
+							]),
+						_List_Nil);
+				case 'EnumRef':
+					var classCaseName = refType.a;
+					var availableValues = A2(
+						$elm$core$Maybe$withDefault,
+						_List_Nil,
+						A2(
+							$elm$core$Maybe$map,
+							function (x) {
+								var definableType = x.b;
+								var maybeDescription = x.c;
+								if (definableType.$ === 'EnumType') {
+									var listEnumValue = definableType.a;
+									return A2(
+										$elm$core$List$map,
+										function (y) {
+											return $author$project$Graphql$Parser$ClassCaseName$raw(y.name);
+										},
+										listEnumValue);
+								} else {
+									return _List_Nil;
+								}
+							},
+							A2(
+								$elm$core$Dict$get,
+								$author$project$Graphql$Parser$ClassCaseName$raw(classCaseName),
+								dictTypeDef)));
+					return A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('select')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$select,
+								_List_fromArray(
+									[
+										$elm$html$Html$Events$onInput(
+										function (a) {
+											return A3(
+												$author$project$Main$UpdateFormAt,
+												path,
+												$author$project$Main$typeRefToArgumentType(typeRef),
+												$elm$core$Maybe$Just(a));
+										})
+									]),
+								A2(
+									$elm$core$List$map,
+									function (z) {
+										return A2(
+											$elm$html$Html$option,
+											_List_fromArray(
+												[
+													$elm$html$Html$Attributes$value(z)
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text(z)
+												]));
+									},
+									availableValues))
+							]));
+				default:
+					return $elm$html$Html$text('');
+			}
+		};
 		var referrableType = typeRef.a;
 		var isNullable = typeRef.b;
 		if (isNullable.$ === 'Nullable') {
@@ -9672,7 +9745,9 @@ var $author$project$Main$inputScalarOrEnum = F2(
 								$elm$html$Html$Attributes$class('control')
 							]),
 						_List_fromArray(
-							[inputHtml])),
+							[
+								inputHtml(referrableType)
+							])),
 						A2(
 						$elm$html$Html$div,
 						_List_fromArray(
@@ -9700,7 +9775,7 @@ var $author$project$Main$inputScalarOrEnum = F2(
 							]))
 					]));
 		} else {
-			return inputHtml;
+			return inputHtml(referrableType);
 		}
 	});
 var $elm$html$Html$td = _VirtualDom_node('td');
@@ -9736,9 +9811,10 @@ var $author$project$Main$fieldToRowInput = F3(
 					_List_Nil,
 					_List_fromArray(
 						[
-							A2(
+							A3(
 							$author$project$Main$inputScalarOrEnum,
 							path + ('.' + $author$project$Main$nameToString(fieldType.name)),
+							dictTypeDef,
 							fieldType.typeRef)
 						]))
 				]));
@@ -9774,14 +9850,16 @@ var $author$project$Main$argToFormField = F3(
 		var inputHtml = function () {
 			switch (referrableType.$) {
 				case 'Scalar':
-					return A2(
+					return A3(
 						$author$project$Main$inputScalarOrEnum,
 						pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
+						dictTypeDef,
 						arg.typeRef);
 				case 'EnumRef':
-					return A2(
+					return A3(
 						$author$project$Main$inputScalarOrEnum,
 						pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
+						dictTypeDef,
 						arg.typeRef);
 				case 'InputObjectRef':
 					var objectClassCaseName = referrableType.a;

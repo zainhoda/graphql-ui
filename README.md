@@ -32,7 +32,7 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Add most of the fields to the request
 - [x] Store query results https://package.elm-lang.org/packages/andre-dietrich/elm-generic/latest/Generic#Value
 - [x] Tables/FieldViewer from Query Results
-- [ ] argToFormField - lookup enum values (show fields for any kind of TypeReference actually)
+- [x] argToFormField - lookup enum values (show fields for any kind of TypeReference actually)
 - [ ] typeRefToArgumentType - handle all types
 - [x] argToFormField - send additional type information to UpdateFormInput
 - [x] Handle enum types instead of just string (i.e. GraphQl.string) 
