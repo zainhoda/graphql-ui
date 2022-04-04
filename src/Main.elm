@@ -48,7 +48,7 @@ type alias Model =
 
 type Msg
   = NoOp
-  | GotConfig (Result Http.Error Config)
+  | UpdateEndpoint String
   | HitEndpoint
   | GotIntrospection (Result Http.Error ApiInteractions)
   | UpdateFormAt String ArgumentType (Maybe String)
@@ -109,12 +109,20 @@ update msg model =
     NoOp ->
       ( model, Cmd.none )
 
-    GotConfig config ->
-      ( { model 
-        | config = Result.toMaybe config
-        }
-      , Cmd.none
-      )
+    UpdateEndpoint url ->
+      let maybeConfig = model.config
+          newConfig = case maybeConfig of
+                        Nothing ->
+                          Just { graphqlEndpoint = url }
+                        
+                        Just config ->
+                          Just {config | graphqlEndpoint = url}
+      in
+        ( { model 
+          | config = newConfig
+          }
+        , Cmd.none
+        )
     
     HitEndpoint ->
       case model.config of
@@ -276,14 +284,38 @@ apiInteractionsToTypeDict res =
 view : Model -> Html Msg
 view model =
   div [Html.Attributes.class "container"]
-      [ pre [] [text (Debug.toString model.config)]
+      [ configView model.config
       , pre [] [text (Debug.toString model.formInput)]
-      , button [Html.Attributes.class "button is-large is-success" , Html.Events.onClick HitEndpoint ] [text "Introspect!"]
       , h1 [Html.Attributes.class "title"] [text "Responses"]
       , tabView model.activeResponse model.response
       , errorView model.introspection
       , apiView model
       ]
+
+configView : Maybe Config -> Html Msg
+configView maybeConfig =
+  div
+    [Html.Attributes.class "field is-horizontal"]
+    [ div [Html.Attributes.class "field-label is-normal"] [label [Html.Attributes.class "label"] [text "GraphQL Endpoint"]]
+    , div 
+      [ Html.Attributes.class "field-body field has-addons" ]
+      [ div 
+        [ Html.Attributes.class "control" ] 
+        [ input 
+          [ Html.Attributes.class "input"
+          , Html.Attributes.type_ "text"
+          , Html.Attributes.value (maybeConfig |> Maybe.map .graphqlEndpoint |> Maybe.withDefault "")
+          , Html.Events.onInput UpdateEndpoint
+          ]
+          [] 
+        ]
+      , div 
+        [ Html.Attributes.class "control" ] 
+        [ button [Html.Attributes.class "button is-success" 
+        , Html.Events.onClick HitEndpoint ] [text "Introspect!"]
+        ]
+      ]
+    ]
 
 errorView : Result Http.Error a -> Html msg
 errorView result  = 

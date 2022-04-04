@@ -9416,21 +9416,32 @@ var $author$project$Main$update = F2(
 		switch (_v0.$) {
 			case 'NoOp':
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-			case 'GotConfig':
-				var config = _v0.a;
+			case 'UpdateEndpoint':
+				var url = _v0.a;
+				var maybeConfig = model.config;
+				var newConfig = function () {
+					if (maybeConfig.$ === 'Nothing') {
+						return $elm$core$Maybe$Just(
+							{graphqlEndpoint: url});
+					} else {
+						var config = maybeConfig.a;
+						return $elm$core$Maybe$Just(
+							_Utils_update(
+								config,
+								{graphqlEndpoint: url}));
+					}
+				}();
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{
-							config: $elm$core$Result$toMaybe(config)
-						}),
+						{config: newConfig}),
 					$elm$core$Platform$Cmd$none);
 			case 'HitEndpoint':
-				var _v1 = model.config;
-				if (_v1.$ === 'Nothing') {
+				var _v2 = model.config;
+				if (_v2.$ === 'Nothing') {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				} else {
-					var config = _v1.a;
+					var config = _v2.a;
 					return _Utils_Tuple2(
 						model,
 						$author$project$Main$runIntrospectionQuery(config.graphqlEndpoint));
@@ -9534,7 +9545,6 @@ var $author$project$Main$update = F2(
 		}
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
-var $author$project$Main$HitEndpoint = {$: 'HitEndpoint'};
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -10165,6 +10175,98 @@ var $author$project$Main$apiView = function (model) {
 				A2($elm$html$Html$ul, _List_Nil, baseTypes)
 			]));
 };
+var $author$project$Main$HitEndpoint = {$: 'HitEndpoint'};
+var $author$project$Main$UpdateEndpoint = function (a) {
+	return {$: 'UpdateEndpoint', a: a};
+};
+var $elm$html$Html$label = _VirtualDom_node('label');
+var $author$project$Main$configView = function (maybeConfig) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('field is-horizontal')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('field-label is-normal')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$label,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('label')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('GraphQL Endpoint')
+							]))
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('field-body field has-addons')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('control')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$input,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('input'),
+										$elm$html$Html$Attributes$type_('text'),
+										$elm$html$Html$Attributes$value(
+										A2(
+											$elm$core$Maybe$withDefault,
+											'',
+											A2(
+												$elm$core$Maybe$map,
+												function ($) {
+													return $.graphqlEndpoint;
+												},
+												maybeConfig))),
+										$elm$html$Html$Events$onInput($author$project$Main$UpdateEndpoint)
+									]),
+								_List_Nil)
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('control')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$button,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('button is-success'),
+										$elm$html$Html$Events$onClick($author$project$Main$HitEndpoint)
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Introspect!')
+									]))
+							]))
+					]))
+			]));
+};
 var $author$project$Main$errorView = function (result) {
 	if (result.$ === 'Err') {
 		var error = result.a;
@@ -10534,14 +10636,7 @@ var $author$project$Main$view = function (model) {
 			]),
 		_List_fromArray(
 			[
-				A2(
-				$elm$html$Html$pre,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$elm$html$Html$text(
-						$elm$core$Debug$toString(model.config))
-					])),
+				$author$project$Main$configView(model.config),
 				A2(
 				$elm$html$Html$pre,
 				_List_Nil,
@@ -10549,17 +10644,6 @@ var $author$project$Main$view = function (model) {
 					[
 						$elm$html$Html$text(
 						$elm$core$Debug$toString(model.formInput))
-					])),
-				A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('button is-large is-success'),
-						$elm$html$Html$Events$onClick($author$project$Main$HitEndpoint)
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Introspect!')
 					])),
 				A2(
 				$elm$html$Html$h1,
