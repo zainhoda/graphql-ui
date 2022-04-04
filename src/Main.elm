@@ -172,6 +172,13 @@ update msg model =
       in
         ( { model | response = model.response |> Dict.insert key genericValue} , Cmd.none)
 
+-- getFormAt : String -> (Dict.Dict String (Dict.Dict String QueryArgument)) -> Maybe QueryArgument
+-- getFormAt path formDict =
+--   let pathList = String.split "." path -- List String
+--   in
+--     formDict
+--     |> Dict.get 
+
 updateFormAt : String -> ArgumentType -> Maybe String -> (Dict.Dict String (Dict.Dict String QueryArgument)) -> (Dict.Dict String (Dict.Dict String QueryArgument))
 updateFormAt path argumentType maybeFormValue formDict =
   let pathList = String.split "." path -- List String
@@ -589,7 +596,7 @@ formModal dictTypeDef fieldType =
   div [ class "modal is-active" ]
       [ div [ class "modal-background" ]
           []
-      , div [ class "modal-card" ]
+      , div [ class "modal-card", Html.Attributes.style "width" "calc(100vw - 30px)"] 
           [ header [ class "modal-card-head" ]
               [ p [ class "modal-card-title" ]
                   [ text (nameToString fieldType.name) ]
@@ -610,34 +617,11 @@ formModal dictTypeDef fieldType =
 
 argToFormField : String -> Dict.Dict String Type.TypeDefinition -> Type.Arg  -> Html Msg
 argToFormField pathPrefix dictTypeDef arg =
-  let (referrableType, isNullable) =
-        case arg.typeRef of
-            Type.TypeReference referrableType_ isNullable_ ->
-              (referrableType_, isNullable_)
-
-      inputHtml =
-        case referrableType of
-            Type.Scalar _ ->
-              inputFromTypeRef (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
-
-            Type.EnumRef _ ->
-              inputFromTypeRef (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
-
-            Type.InputObjectRef objectClassCaseName ->
-              let objectName = (Graphql.Parser.ClassCaseName.raw objectClassCaseName)
-              in
-                dictTypeDef
-                |> Dict.get objectName
-                |> Maybe.map (typeDefToForm (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef)
-                |> Maybe.withDefault (text (objectName ++ " not found in the Dict of all objects"))
-            _ ->
-              text "TODO: Unhandled Argument"
-  in
     tr
       []
       [ th [] [text (nameToString arg.name), br [] [], text (Maybe.withDefault "" arg.description)]
       , td [] 
-        [ inputHtml
+        [ inputFromTypeRef (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
         ]
       ]
     -- TODO: Show object nesting
@@ -698,8 +682,17 @@ inputFromTypeRef path dictTypeDef typeRef =
                 |> List.map (\z -> option [Html.Attributes.value z] [text z])
                 )
               ]
+
+          Type.InputObjectRef objectClassCaseName ->
+            let objectName = (Graphql.Parser.ClassCaseName.raw objectClassCaseName)
+            in
+              dictTypeDef
+              |> Dict.get objectName
+              |> Maybe.map (typeDefToForm path dictTypeDef)
+              |> Maybe.withDefault (text (objectName ++ " not found in the Dict of all objects"))
+
           _ ->
-            text ""
+            text "TODO: Implement this input type"
   in
     case typeRef of
         Type.TypeReference referrableType isNullable ->

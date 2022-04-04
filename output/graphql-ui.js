@@ -9593,6 +9593,7 @@ var $author$project$Main$UpdateFormAt = F3(
 		return {$: 'UpdateFormAt', a: a, b: b, c: c};
 	});
 var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$b = _VirtualDom_node('b');
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -9623,6 +9624,8 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 };
 var $elm$html$Html$option = _VirtualDom_node('option');
 var $elm$html$Html$select = _VirtualDom_node('select');
+var $elm$html$Html$td = _VirtualDom_node('td');
+var $elm$html$Html$tr = _VirtualDom_node('tr');
 var $author$project$Main$ArgumentEnum = {$: 'ArgumentEnum'};
 var $author$project$Main$ArgumentString = {$: 'ArgumentString'};
 var $author$project$Main$typeRefToArgumentType = function (_v0) {
@@ -9639,6 +9642,43 @@ var $author$project$Main$typeRefToArgumentType = function (_v0) {
 };
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Main$fieldToRowInput = F3(
+	function (path, dictTypeDef, fieldType) {
+		return A2(
+			$elm$html$Html$tr,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$td,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$b,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									$author$project$Main$nameToString(fieldType.name))
+								])),
+							A2($elm$html$Html$br, _List_Nil, _List_Nil),
+							$elm$html$Html$text(
+							A2($elm$core$Maybe$withDefault, '', fieldType.description))
+						])),
+					A2(
+					$elm$html$Html$td,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A3(
+							$author$project$Main$inputFromTypeRef,
+							path + ('.' + $author$project$Main$nameToString(fieldType.name)),
+							dictTypeDef,
+							fieldType.typeRef)
+						]))
+				]));
+	});
 var $author$project$Main$inputFromTypeRef = F3(
 	function (path, dictTypeDef, typeRef) {
 		var inputHtml = function (refType) {
@@ -9723,8 +9763,18 @@ var $author$project$Main$inputFromTypeRef = F3(
 									},
 									availableValues))
 							]));
+				case 'InputObjectRef':
+					var objectClassCaseName = refType.a;
+					var objectName = $author$project$Graphql$Parser$ClassCaseName$raw(objectClassCaseName);
+					return A2(
+						$elm$core$Maybe$withDefault,
+						$elm$html$Html$text(objectName + ' not found in the Dict of all objects'),
+						A2(
+							$elm$core$Maybe$map,
+							A2($author$project$Main$typeDefToForm, path, dictTypeDef),
+							A2($elm$core$Dict$get, objectName, dictTypeDef)));
 				default:
-					return $elm$html$Html$text('');
+					return $elm$html$Html$text('TODO: Implement this input type');
 			}
 		};
 		var referrableType = typeRef.a;
@@ -9778,47 +9828,6 @@ var $author$project$Main$inputFromTypeRef = F3(
 			return inputHtml(referrableType);
 		}
 	});
-var $elm$html$Html$td = _VirtualDom_node('td');
-var $elm$html$Html$th = _VirtualDom_node('th');
-var $elm$html$Html$tr = _VirtualDom_node('tr');
-var $elm$html$Html$b = _VirtualDom_node('b');
-var $author$project$Main$fieldToRowInput = F3(
-	function (path, dictTypeDef, fieldType) {
-		return A2(
-			$elm$html$Html$tr,
-			_List_Nil,
-			_List_fromArray(
-				[
-					A2(
-					$elm$html$Html$td,
-					_List_Nil,
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$b,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(
-									$author$project$Main$nameToString(fieldType.name))
-								])),
-							A2($elm$html$Html$br, _List_Nil, _List_Nil),
-							$elm$html$Html$text(
-							A2($elm$core$Maybe$withDefault, '', fieldType.description))
-						])),
-					A2(
-					$elm$html$Html$td,
-					_List_Nil,
-					_List_fromArray(
-						[
-							A3(
-							$author$project$Main$inputFromTypeRef,
-							path + ('.' + $author$project$Main$nameToString(fieldType.name)),
-							dictTypeDef,
-							fieldType.typeRef)
-						]))
-				]));
-	});
 var $author$project$Main$typeDefToForm = F3(
 	function (path, dictTypeDef, _v0) {
 		var classCaseName = _v0.a;
@@ -9837,47 +9846,9 @@ var $author$project$Main$typeDefToForm = F3(
 			return $elm$html$Html$text('TODO: Handle Other Types of Type Definitions in the Input');
 		}
 	});
+var $elm$html$Html$th = _VirtualDom_node('th');
 var $author$project$Main$argToFormField = F3(
 	function (pathPrefix, dictTypeDef, arg) {
-		var _v0 = function () {
-			var _v1 = arg.typeRef;
-			var referrableType_ = _v1.a;
-			var isNullable_ = _v1.b;
-			return _Utils_Tuple2(referrableType_, isNullable_);
-		}();
-		var referrableType = _v0.a;
-		var isNullable = _v0.b;
-		var inputHtml = function () {
-			switch (referrableType.$) {
-				case 'Scalar':
-					return A3(
-						$author$project$Main$inputFromTypeRef,
-						pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
-						dictTypeDef,
-						arg.typeRef);
-				case 'EnumRef':
-					return A3(
-						$author$project$Main$inputFromTypeRef,
-						pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
-						dictTypeDef,
-						arg.typeRef);
-				case 'InputObjectRef':
-					var objectClassCaseName = referrableType.a;
-					var objectName = $author$project$Graphql$Parser$ClassCaseName$raw(objectClassCaseName);
-					return A2(
-						$elm$core$Maybe$withDefault,
-						$elm$html$Html$text(objectName + ' not found in the Dict of all objects'),
-						A2(
-							$elm$core$Maybe$map,
-							A2(
-								$author$project$Main$typeDefToForm,
-								pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
-								dictTypeDef),
-							A2($elm$core$Dict$get, objectName, dictTypeDef)));
-				default:
-					return $elm$html$Html$text('TODO: Unhandled Argument');
-			}
-		}();
 		return A2(
 			$elm$html$Html$tr,
 			_List_Nil,
@@ -9898,7 +9869,13 @@ var $author$project$Main$argToFormField = F3(
 					$elm$html$Html$td,
 					_List_Nil,
 					_List_fromArray(
-						[inputHtml]))
+						[
+							A3(
+							$author$project$Main$inputFromTypeRef,
+							pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
+							dictTypeDef,
+							arg.typeRef)
+						]))
 				]));
 	});
 var $elm$html$Html$table = _VirtualDom_node('table');
@@ -9935,6 +9912,8 @@ var $elm$html$Html$footer = _VirtualDom_node('footer');
 var $elm$html$Html$header = _VirtualDom_node('header');
 var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$html$Html$section = _VirtualDom_node('section');
+var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $author$project$Main$formModal = F2(
 	function (dictTypeDef, fieldType) {
 		return A2(
@@ -9956,7 +9935,8 @@ var $author$project$Main$formModal = F2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('modal-card')
+							$elm$html$Html$Attributes$class('modal-card'),
+							A2($elm$html$Html$Attributes$style, 'width', 'calc(100vw - 30px)')
 						]),
 					_List_fromArray(
 						[

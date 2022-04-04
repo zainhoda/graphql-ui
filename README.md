@@ -34,7 +34,9 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Tables/FieldViewer from Query Results
 - [x] argToFormField - lookup enum values (show fields for any kind of TypeReference actually)
 - [x] inputScalarOrEnum should be renamed to inputFromTypeRef
-- [ ] Move case Type.InputObjectRef objectClassCaseName to inputFromTypeRef
+- [x] Move case Type.InputObjectRef objectClassCaseName to inputFromTypeRef
+- [ ] Currently set value needs to be displayed in the form input
+- [ ] Change "Clear" to a +/- 
 - [ ] Handle all types
 - [ ] typeRefToArgumentType - handle all types
 - [x] argToFormField - send additional type information to UpdateFormInput
@@ -43,7 +45,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Displaying UnionRef tables is probably wrong -- need to account for all fields first when constructing the header of the tables and then displaying the rows should be based on a list of fields, 
 - [ ] TODO: Handle Lists in QueryArgument
 - [x] Mutations
-- [ ] Make the UI look a little nicer
+- [x] Change Modal to a whole page
+- [ ] Prettify Camel Case, Snake Case, and all Caps to more human-readable output via a function 
 - [ ] Make the URL editable
 - [ ] Use the typeRef of the argument for displaying the form field
 - [ ] Use the typeRef of the argument for storing the form field
@@ -51,8 +54,6 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] Use the nullability when displaying the form field
 - [ ] Use the nullability when inputting the form field
 - [ ] Use the nullability when making the GraphQL query
-- [ ] Enum types in forms
-- [ ] Additional types
 - [ ] Use RemoteData package https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/
 - [x] Get rid of config.json and instead pass it through flags so that it's runtime-configurable
 - [ ] TODO: EverySet type?
