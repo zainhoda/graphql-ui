@@ -36,9 +36,8 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] inputScalarOrEnum should be renamed to inputFromTypeRef
 - [x] Move case Type.InputObjectRef objectClassCaseName to inputFromTypeRef
 - [x] Currently set value needs to be displayed in the form input
-- [ ] Change "Clear" to a +/- 
-- [ ] Handle all types
 - [ ] typeRefToArgumentType - handle all types
+- [ ] inputFromTypeRef - Handle all types
 - [x] argToFormField - send additional type information to UpdateFormInput
 - [x] Handle enum types instead of just string (i.e. GraphQl.string) 
 - [ ] TODO: UnionRef
@@ -47,13 +46,13 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] Mutations
 - [x] Change Modal to a whole page
 - [ ] Prettify Camel Case, Snake Case, and all Caps to more human-readable output via a function 
-- [ ] Make the URL editable
+- [x] Make the URL editable
 - [ ] Use the typeRef of the argument for displaying the form field
 - [ ] Use the typeRef of the argument for storing the form field
 - [x] Handle Mutations
-- [ ] Use the nullability when displaying the form field
-- [ ] Use the nullability when inputting the form field
-- [ ] Use the nullability when making the GraphQL query
+- [x] Use the nullability when displaying the form field
+- [x] Use the nullability when inputting the form field
+- [x] Use the nullability when making the GraphQL query
 - [ ] Use RemoteData package https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/
 - [x] Get rid of config.json and instead pass it through flags so that it's runtime-configurable
 - [ ] TODO: EverySet type?
