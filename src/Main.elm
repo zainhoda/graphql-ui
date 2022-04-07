@@ -26,6 +26,7 @@ import GenericDict
 import RemoteData
 import Time
 import Graphql.Parser.Scalar exposing (Scalar(..))
+import GraphQl exposing (query)
 
 -- TYPES
 type alias Flags = Json.Decode.Value
@@ -180,12 +181,37 @@ update msg model =
       in
         ( { model | response = model.response |> Dict.insert key genericValue} , Cmd.none)
 
--- getFormAt : String -> (Dict.Dict String (Dict.Dict String QueryArgument)) -> Maybe QueryArgument
--- getFormAt path formDict =
---   let pathList = String.split "." path -- List String
---   in
---     formDict
---     |> Dict.get 
+getFormAt : String -> (Dict.Dict String (Dict.Dict String QueryArgument)) -> Maybe String
+getFormAt path formDict =
+  let pathList = String.split "." path -- List String
+      formName = Maybe.withDefault "" (List.head pathList) -- String
+      pathToGet = List.tail pathList |> Maybe.withDefault [] -- List String
+      baseQueryArgument  = formDict                          -- QueryArgument
+                            |> Dict.get formName
+                            |> Maybe.withDefault Dict.empty
+                            |> QueryNested
+  in
+    pathToGet
+    |> List.foldl
+        (\str -> \queryArgument ->
+          case queryArgument of
+              QueryLeaf _ _ ->
+                queryArgument
+
+              QueryNested dict ->
+                dict
+                |> Dict.get str
+                |> Maybe.withDefault (QueryNested Dict.empty)
+        )
+        baseQueryArgument
+    |> \queryArgument ->
+        case queryArgument of
+            QueryLeaf value argumentType ->
+              Just value
+            
+            QueryNested _ ->
+              Nothing
+
 
 updateFormAt : String -> ArgumentType -> Maybe String -> (Dict.Dict String (Dict.Dict String QueryArgument)) -> (Dict.Dict String (Dict.Dict String QueryArgument))
 updateFormAt path argumentType maybeFormValue formDict =
@@ -353,7 +379,7 @@ apiView model =
           (\activeForm ->
             (Dict.union model.queries model.mutations)
             |> Dict.get activeForm
-            |> Maybe.map (formModal model.types)
+            |> Maybe.map (formModal model.types model.formInput)
             |> Maybe.withDefault (text "Something went wrong -- the activeForm wasn't found in the queries")
           )
         |> Maybe.withDefault (text "")
@@ -611,20 +637,20 @@ fieldTypeToButton fieldType =
       ] 
       [text formName]
 
-fieldArgumentsToForm : String -> Dict.Dict String Type.TypeDefinition -> Type.Field -> Html Msg
-fieldArgumentsToForm path dictTypeDef fieldType =
+fieldArgumentsToForm : String -> Dict.Dict String Type.TypeDefinition -> Dict.Dict String (Dict.Dict String QueryArgument) -> Type.Field -> Html Msg
+fieldArgumentsToForm path dictTypeDef formDict fieldType =
   div
     [ Html.Attributes.class "table-container" ]
     [ table 
       [ Html.Attributes.class "table is-hoverable is-narrow is-bordered"]
       [ tbody 
         []
-        (List.map (argToFormField path dictTypeDef) fieldType.args)
+        (List.map (argToFormField path dictTypeDef formDict) fieldType.args)
       ] 
     ]
 
-formModal : Dict.Dict String Type.TypeDefinition -> Type.Field -> Html Msg
-formModal dictTypeDef fieldType = 
+formModal : Dict.Dict String Type.TypeDefinition -> Dict.Dict String (Dict.Dict String QueryArgument) -> Type.Field -> Html Msg
+formModal dictTypeDef formDict fieldType = 
   div [ class "modal is-active" ]
       [ div [ class "modal-background" ]
           []
@@ -637,7 +663,7 @@ formModal dictTypeDef fieldType =
               ]
           , section [ class "modal-card-body" ]
               [ text (Maybe.withDefault "" fieldType.description)
-              , fieldArgumentsToForm (nameToString fieldType.name) dictTypeDef fieldType 
+              , fieldArgumentsToForm (nameToString fieldType.name) dictTypeDef formDict fieldType 
               ]
           , footer [ class "modal-card-foot" ]
               [ button [ Html.Attributes.class "button is-success", Html.Events.onClick (SubmitForm (nameToString fieldType.name) fieldType.typeRef) ] [text "Run Query"]
@@ -647,13 +673,13 @@ formModal dictTypeDef fieldType =
           ]
       ]
 
-argToFormField : String -> Dict.Dict String Type.TypeDefinition -> Type.Arg  -> Html Msg
-argToFormField pathPrefix dictTypeDef arg =
+argToFormField : String -> Dict.Dict String Type.TypeDefinition -> Dict.Dict String (Dict.Dict String QueryArgument) -> Type.Arg  -> Html Msg
+argToFormField pathPrefix dictTypeDef formDict arg =
     tr
       []
       [ th [] [text (nameToString arg.name), br [] [], text (Maybe.withDefault "" arg.description)]
       , td [] 
-        [ inputFromTypeRef (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef arg.typeRef
+        [ inputFromTypeRef (pathPrefix ++ "." ++ (nameToString arg.name)) dictTypeDef formDict arg.typeRef
         ]
       ]
     -- TODO: Show object nesting
@@ -661,17 +687,17 @@ argToFormField pathPrefix dictTypeDef arg =
     -- TODO: The input value needs to be available in this context for pre-population as well as deciding to set/unset nullable values
     -- TODO: Nullable types should have a "+" button when null, and an "x" button to set null
 
-typeDefToForm : String -> Dict.Dict String Type.TypeDefinition -> Type.TypeDefinition -> Html Msg
-typeDefToForm path dictTypeDef (Type.TypeDefinition classCaseName definableType maybeDescription) =
+typeDefToForm : String -> Dict.Dict String Type.TypeDefinition -> Dict.Dict String (Dict.Dict String QueryArgument) -> Type.TypeDefinition -> Html Msg
+typeDefToForm path dictTypeDef formDict (Type.TypeDefinition classCaseName definableType maybeDescription) =
   case definableType of
     Type.InputObjectType listOfField ->
-      List.map (fieldToRowInput (path) dictTypeDef) listOfField
+      List.map (fieldToRowInput (path) dictTypeDef formDict) listOfField
       |> div []
     _ ->
       text "TODO: Handle Other Types of Type Definitions in the Input"
         
-fieldToRowInput : String -> Dict.Dict String Type.TypeDefinition -> Type.Field -> Html Msg
-fieldToRowInput path dictTypeDef fieldType =
+fieldToRowInput : String -> Dict.Dict String Type.TypeDefinition -> Dict.Dict String (Dict.Dict String QueryArgument) -> Type.Field -> Html Msg
+fieldToRowInput path dictTypeDef formDict fieldType =
   tr 
     []
     [ td [] 
@@ -679,17 +705,19 @@ fieldToRowInput path dictTypeDef fieldType =
       , br [] []
       , text (Maybe.withDefault "" fieldType.description)
       ]
-    , td [] [inputFromTypeRef (path++"."++(nameToString fieldType.name)) dictTypeDef fieldType.typeRef]
+    , td [] [inputFromTypeRef (path++"."++(nameToString fieldType.name)) dictTypeDef formDict fieldType.typeRef]
     ]
 
-inputFromTypeRef : String -> Dict.Dict String Type.TypeDefinition -> Type.TypeReference -> Html Msg
-inputFromTypeRef path dictTypeDef typeRef =
-  let inputHtml refType =
+inputFromTypeRef : String -> Dict.Dict String Type.TypeDefinition -> Dict.Dict String (Dict.Dict String QueryArgument) -> Type.TypeReference -> Html Msg
+inputFromTypeRef path dictTypeDef formDict typeRef =
+  let currentValue = getFormAt path formDict
+      inputHtml refType =
         case refType of
           Type.Scalar _ ->          
             input [ Html.Attributes.class "input"
                   , Html.Attributes.type_ "text"
                   , Html.Events.onInput (\x -> UpdateFormAt path (typeRefToArgumentType typeRef) (Just x))
+                  , Html.Attributes.value ( Maybe.withDefault "" currentValue)
                   ] []
 
           Type.EnumRef classCaseName ->
@@ -720,11 +748,12 @@ inputFromTypeRef path dictTypeDef typeRef =
             in
               dictTypeDef
               |> Dict.get objectName
-              |> Maybe.map (typeDefToForm path dictTypeDef)
+              |> Maybe.map (typeDefToForm path dictTypeDef formDict)
               |> Maybe.withDefault (text (objectName ++ " not found in the Dict of all objects"))
 
           _ ->
             text "TODO: Implement this input type"
+      
   in
     case typeRef of
         Type.TypeReference referrableType isNullable ->

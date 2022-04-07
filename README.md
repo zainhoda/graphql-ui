@@ -35,7 +35,7 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [x] argToFormField - lookup enum values (show fields for any kind of TypeReference actually)
 - [x] inputScalarOrEnum should be renamed to inputFromTypeRef
 - [x] Move case Type.InputObjectRef objectClassCaseName to inputFromTypeRef
-- [ ] Currently set value needs to be displayed in the form input
+- [x] Currently set value needs to be displayed in the form input
 - [ ] Change "Clear" to a +/- 
 - [ ] Handle all types
 - [ ] typeRefToArgumentType - handle all types

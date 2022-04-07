@@ -9604,6 +9604,49 @@ var $author$project$Main$UpdateFormAt = F3(
 	});
 var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$html$Html$b = _VirtualDom_node('b');
+var $author$project$Main$getFormAt = F2(
+	function (path, formDict) {
+		var pathList = A2($elm$core$String$split, '.', path);
+		var pathToGet = A2(
+			$elm$core$Maybe$withDefault,
+			_List_Nil,
+			$elm$core$List$tail(pathList));
+		var formName = A2(
+			$elm$core$Maybe$withDefault,
+			'',
+			$elm$core$List$head(pathList));
+		var baseQueryArgument = $author$project$Main$QueryNested(
+			A2(
+				$elm$core$Maybe$withDefault,
+				$elm$core$Dict$empty,
+				A2($elm$core$Dict$get, formName, formDict)));
+		return function (queryArgument) {
+			if (queryArgument.$ === 'QueryLeaf') {
+				var value = queryArgument.a;
+				var argumentType = queryArgument.b;
+				return $elm$core$Maybe$Just(value);
+			} else {
+				return $elm$core$Maybe$Nothing;
+			}
+		}(
+			A3(
+				$elm$core$List$foldl,
+				function (str) {
+					return function (queryArgument) {
+						if (queryArgument.$ === 'QueryLeaf') {
+							return queryArgument;
+						} else {
+							var dict = queryArgument.a;
+							return A2(
+								$elm$core$Maybe$withDefault,
+								$author$project$Main$QueryNested($elm$core$Dict$empty),
+								A2($elm$core$Dict$get, str, dict));
+						}
+					};
+				},
+				baseQueryArgument,
+				pathToGet));
+	});
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -9652,8 +9695,8 @@ var $author$project$Main$typeRefToArgumentType = function (_v0) {
 };
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Main$fieldToRowInput = F3(
-	function (path, dictTypeDef, fieldType) {
+var $author$project$Main$fieldToRowInput = F4(
+	function (path, dictTypeDef, formDict, fieldType) {
 		return A2(
 			$elm$html$Html$tr,
 			_List_Nil,
@@ -9681,16 +9724,18 @@ var $author$project$Main$fieldToRowInput = F3(
 					_List_Nil,
 					_List_fromArray(
 						[
-							A3(
+							A4(
 							$author$project$Main$inputFromTypeRef,
 							path + ('.' + $author$project$Main$nameToString(fieldType.name)),
 							dictTypeDef,
+							formDict,
 							fieldType.typeRef)
 						]))
 				]));
 	});
-var $author$project$Main$inputFromTypeRef = F3(
-	function (path, dictTypeDef, typeRef) {
+var $author$project$Main$inputFromTypeRef = F4(
+	function (path, dictTypeDef, formDict, typeRef) {
+		var currentValue = A2($author$project$Main$getFormAt, path, formDict);
 		var inputHtml = function (refType) {
 			switch (refType.$) {
 				case 'Scalar':
@@ -9707,7 +9752,9 @@ var $author$project$Main$inputFromTypeRef = F3(
 										path,
 										$author$project$Main$typeRefToArgumentType(typeRef),
 										$elm$core$Maybe$Just(x));
-								})
+								}),
+								$elm$html$Html$Attributes$value(
+								A2($elm$core$Maybe$withDefault, '', currentValue))
 							]),
 						_List_Nil);
 				case 'EnumRef':
@@ -9781,7 +9828,7 @@ var $author$project$Main$inputFromTypeRef = F3(
 						$elm$html$Html$text(objectName + ' not found in the Dict of all objects'),
 						A2(
 							$elm$core$Maybe$map,
-							A2($author$project$Main$typeDefToForm, path, dictTypeDef),
+							A3($author$project$Main$typeDefToForm, path, dictTypeDef, formDict),
 							A2($elm$core$Dict$get, objectName, dictTypeDef)));
 				default:
 					return $elm$html$Html$text('TODO: Implement this input type');
@@ -9838,8 +9885,8 @@ var $author$project$Main$inputFromTypeRef = F3(
 			return inputHtml(referrableType);
 		}
 	});
-var $author$project$Main$typeDefToForm = F3(
-	function (path, dictTypeDef, _v0) {
+var $author$project$Main$typeDefToForm = F4(
+	function (path, dictTypeDef, formDict, _v0) {
 		var classCaseName = _v0.a;
 		var definableType = _v0.b;
 		var maybeDescription = _v0.c;
@@ -9850,15 +9897,15 @@ var $author$project$Main$typeDefToForm = F3(
 				_List_Nil,
 				A2(
 					$elm$core$List$map,
-					A2($author$project$Main$fieldToRowInput, path, dictTypeDef),
+					A3($author$project$Main$fieldToRowInput, path, dictTypeDef, formDict),
 					listOfField));
 		} else {
 			return $elm$html$Html$text('TODO: Handle Other Types of Type Definitions in the Input');
 		}
 	});
 var $elm$html$Html$th = _VirtualDom_node('th');
-var $author$project$Main$argToFormField = F3(
-	function (pathPrefix, dictTypeDef, arg) {
+var $author$project$Main$argToFormField = F4(
+	function (pathPrefix, dictTypeDef, formDict, arg) {
 		return A2(
 			$elm$html$Html$tr,
 			_List_Nil,
@@ -9880,18 +9927,19 @@ var $author$project$Main$argToFormField = F3(
 					_List_Nil,
 					_List_fromArray(
 						[
-							A3(
+							A4(
 							$author$project$Main$inputFromTypeRef,
 							pathPrefix + ('.' + $author$project$Main$nameToString(arg.name)),
 							dictTypeDef,
+							formDict,
 							arg.typeRef)
 						]))
 				]));
 	});
 var $elm$html$Html$table = _VirtualDom_node('table');
 var $elm$html$Html$tbody = _VirtualDom_node('tbody');
-var $author$project$Main$fieldArgumentsToForm = F3(
-	function (path, dictTypeDef, fieldType) {
+var $author$project$Main$fieldArgumentsToForm = F4(
+	function (path, dictTypeDef, formDict, fieldType) {
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -9913,7 +9961,7 @@ var $author$project$Main$fieldArgumentsToForm = F3(
 							_List_Nil,
 							A2(
 								$elm$core$List$map,
-								A2($author$project$Main$argToFormField, path, dictTypeDef),
+								A3($author$project$Main$argToFormField, path, dictTypeDef, formDict),
 								fieldType.args))
 						]))
 				]));
@@ -9924,8 +9972,8 @@ var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$html$Html$section = _VirtualDom_node('section');
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
-var $author$project$Main$formModal = F2(
-	function (dictTypeDef, fieldType) {
+var $author$project$Main$formModal = F3(
+	function (dictTypeDef, formDict, fieldType) {
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -9989,10 +10037,11 @@ var $author$project$Main$formModal = F2(
 								[
 									$elm$html$Html$text(
 									A2($elm$core$Maybe$withDefault, '', fieldType.description)),
-									A3(
+									A4(
 									$author$project$Main$fieldArgumentsToForm,
 									$author$project$Main$nameToString(fieldType.name),
 									dictTypeDef,
+									formDict,
 									fieldType)
 								])),
 							A2(
@@ -10094,7 +10143,7 @@ var $author$project$Main$apiView = function (model) {
 					$elm$html$Html$text('Something went wrong -- the activeForm wasn\'t found in the queries'),
 					A2(
 						$elm$core$Maybe$map,
-						$author$project$Main$formModal(model.types),
+						A2($author$project$Main$formModal, model.types, model.formInput),
 						A2(
 							$elm$core$Dict$get,
 							activeForm,
