@@ -761,12 +761,29 @@ inputFromTypeRef path dictTypeDef formDict typeRef =
             Type.Nullable ->
               div
                 [Html.Attributes.class "field has-addons"]
-                [ div [Html.Attributes.class "control"] [inputHtml referrableType]
-                , div [Html.Attributes.class "control"] 
-                  [ a [class "button is-warning"
-                  , Html.Events.onClick (UpdateFormAt path (typeRefToArgumentType typeRef) Nothing)
-                  ] [text "Clear"]
+                [ div 
+                  [ Html.Attributes.class "control" ] 
+                  [ case currentValue of
+                      Nothing -> -- No value set for this nullable type
+                        button 
+                          [ Html.Attributes.class "button is-info"
+                          , Html.Events.onClick (UpdateFormAt path (typeRefToArgumentType typeRef) (Just "")) -- TODO: Do we need to send a better type here for nested inputs?
+                          ] 
+                          [ text "Add Optional Value" 
+                          ]
+                      Just _ ->
+                        inputHtml referrableType
                   ]
+                , case currentValue of
+                    Nothing ->
+                      text ""
+                
+                    Just _ ->
+                      div [Html.Attributes.class "control"] 
+                        [ a [class "button is-warning"
+                        , Html.Events.onClick (UpdateFormAt path (typeRefToArgumentType typeRef) Nothing)
+                        ] [text "Clear"]
+                        ]
                 ]
             Type.NonNullable ->
               inputHtml referrableType

@@ -9853,33 +9853,60 @@ var $author$project$Main$inputFromTypeRef = F4(
 							]),
 						_List_fromArray(
 							[
-								inputHtml(referrableType)
+								function () {
+								if (currentValue.$ === 'Nothing') {
+									return A2(
+										$elm$html$Html$button,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$class('button is-info'),
+												$elm$html$Html$Events$onClick(
+												A3(
+													$author$project$Main$UpdateFormAt,
+													path,
+													$author$project$Main$typeRefToArgumentType(typeRef),
+													$elm$core$Maybe$Just('')))
+											]),
+										_List_fromArray(
+											[
+												$elm$html$Html$text('Add Optional Value')
+											]));
+								} else {
+									return inputHtml(referrableType);
+								}
+							}()
 							])),
-						A2(
-						$elm$html$Html$div,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('control')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$a,
+						function () {
+						if (currentValue.$ === 'Nothing') {
+							return $elm$html$Html$text('');
+						} else {
+							return A2(
+								$elm$html$Html$div,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$class('button is-warning'),
-										$elm$html$Html$Events$onClick(
-										A3(
-											$author$project$Main$UpdateFormAt,
-											path,
-											$author$project$Main$typeRefToArgumentType(typeRef),
-											$elm$core$Maybe$Nothing))
+										$elm$html$Html$Attributes$class('control')
 									]),
 								_List_fromArray(
 									[
-										$elm$html$Html$text('Clear')
-									]))
-							]))
+										A2(
+										$elm$html$Html$a,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$class('button is-warning'),
+												$elm$html$Html$Events$onClick(
+												A3(
+													$author$project$Main$UpdateFormAt,
+													path,
+													$author$project$Main$typeRefToArgumentType(typeRef),
+													$elm$core$Maybe$Nothing))
+											]),
+										_List_fromArray(
+											[
+												$elm$html$Html$text('Clear')
+											]))
+									]));
+						}
+					}()
 					]));
 		} else {
 			return inputHtml(referrableType);
