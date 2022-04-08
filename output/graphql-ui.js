@@ -8916,26 +8916,52 @@ var $ghivert$elm_graphql$Helpers$betweenQuotes = $ghivert$elm_graphql$Helpers$be
 var $ghivert$elm_graphql$GraphQl$string = A2($elm$core$Basics$composeR, $ghivert$elm_graphql$Helpers$betweenQuotes, $ghivert$elm_graphql$GraphQl$Argument);
 var $ghivert$elm_graphql$GraphQl$type_ = $ghivert$elm_graphql$GraphQl$Argument;
 var $author$project$Main$queryArgumentToGraphQlAgument = function (queryArgument) {
-	if (queryArgument.$ === 'QueryLeaf') {
-		var str = queryArgument.a;
-		var argumentType = queryArgument.b;
-		if (argumentType.$ === 'ArgumentString') {
-			return $ghivert$elm_graphql$GraphQl$string(str);
-		} else {
-			return $ghivert$elm_graphql$GraphQl$type_(str);
-		}
-	} else {
-		var dictStringQueryArgument = queryArgument.a;
-		return $ghivert$elm_graphql$GraphQl$input(
-			$elm$core$Dict$toList(
-				A2(
-					$elm$core$Dict$map,
-					function (_v2) {
-						return function (v) {
-							return $author$project$Main$queryArgumentToGraphQlAgument(v);
-						};
-					},
-					dictStringQueryArgument)));
+	switch (queryArgument.$) {
+		case 'QueryLeaf':
+			var str = queryArgument.a;
+			var argumentType = queryArgument.b;
+			if (argumentType.$ === 'ArgumentString') {
+				return $ghivert$elm_graphql$GraphQl$string(str);
+			} else {
+				return $ghivert$elm_graphql$GraphQl$type_(str);
+			}
+		case 'QueryNested':
+			var dictStringQueryArgument = queryArgument.a;
+			return $ghivert$elm_graphql$GraphQl$input(
+				$elm$core$Dict$toList(
+					A2(
+						$elm$core$Dict$map,
+						function (_v2) {
+							return function (v) {
+								return $author$project$Main$queryArgumentToGraphQlAgument(v);
+							};
+						},
+						dictStringQueryArgument)));
+		default:
+			var listQueryArgument = queryArgument.a;
+			return $ghivert$elm_graphql$GraphQl$type_(
+				function (x) {
+					return '[ ' + (x + ' ]');
+				}(
+					A2(
+						$elm$core$String$join,
+						', ',
+						A2(
+							$elm$core$List$map,
+							function (x) {
+								return '\"' + (x + '\"');
+							},
+							A2(
+								$elm$core$List$map,
+								function (x) {
+									if (x.$ === 'QueryLeaf') {
+										var str = x.a;
+										return str;
+									} else {
+										return 'TODO';
+									}
+								},
+								listQueryArgument)))));
 	}
 };
 var $author$project$Main$GotQueryResponse = F2(
@@ -9324,6 +9350,9 @@ var $author$project$Main$QueryLeaf = F2(
 	function (a, b) {
 		return {$: 'QueryLeaf', a: a, b: b};
 	});
+var $author$project$Main$QueryList = function (a) {
+	return {$: 'QueryList', a: a};
+};
 var $author$project$Main$QueryNested = function (a) {
 	return {$: 'QueryNested', a: a};
 };
@@ -9371,14 +9400,19 @@ var $author$project$Main$nestedQueryArgumentDictUpdate = F4(
 								A4($author$project$Main$nestedQueryArgumentDictUpdate, tail, argumentType, maybeFormValue, $elm$core$Dict$empty)));
 					} else {
 						var queryArgument = maybeQueryArgument.a;
-						if (queryArgument.$ === 'QueryLeaf') {
-							return $elm$core$Maybe$Just(
-								$author$project$Main$QueryNested($elm$core$Dict$empty));
-						} else {
-							var dictToUpdate = queryArgument.a;
-							return $elm$core$Maybe$Just(
-								$author$project$Main$QueryNested(
-									A4($author$project$Main$nestedQueryArgumentDictUpdate, tail, argumentType, maybeFormValue, dictToUpdate)));
+						switch (queryArgument.$) {
+							case 'QueryLeaf':
+								return $elm$core$Maybe$Just(
+									$author$project$Main$QueryNested($elm$core$Dict$empty));
+							case 'QueryNested':
+								var dictToUpdate = queryArgument.a;
+								return $elm$core$Maybe$Just(
+									$author$project$Main$QueryNested(
+										A4($author$project$Main$nestedQueryArgumentDictUpdate, tail, argumentType, maybeFormValue, dictToUpdate)));
+							default:
+								var listQueryArgument = queryArgument.a;
+								return $elm$core$Maybe$Just(
+									$author$project$Main$QueryList(_List_Nil));
 						}
 					}
 				},
@@ -9604,6 +9638,31 @@ var $author$project$Main$UpdateFormAt = F3(
 	});
 var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$html$Html$b = _VirtualDom_node('b');
+var $author$project$Main$queryArgumentToMaybeString = function (queryArgument) {
+	switch (queryArgument.$) {
+		case 'QueryLeaf':
+			var value = queryArgument.a;
+			var argumentType = queryArgument.b;
+			return $elm$core$Maybe$Just(value);
+		case 'QueryNested':
+			return $elm$core$Maybe$Nothing;
+		default:
+			var queryList = queryArgument.a;
+			return $elm$core$Maybe$Just(
+				A2(
+					$elm$core$String$join,
+					',',
+					A2(
+						$elm$core$List$map,
+						function (x) {
+							return A2(
+								$elm$core$Maybe$withDefault,
+								'',
+								$author$project$Main$queryArgumentToMaybeString(x));
+						},
+						queryList)));
+	}
+};
 var $author$project$Main$getFormAt = F2(
 	function (path, formDict) {
 		var pathList = A2($elm$core$String$split, '.', path);
@@ -9620,27 +9679,22 @@ var $author$project$Main$getFormAt = F2(
 				$elm$core$Maybe$withDefault,
 				$elm$core$Dict$empty,
 				A2($elm$core$Dict$get, formName, formDict)));
-		return function (queryArgument) {
-			if (queryArgument.$ === 'QueryLeaf') {
-				var value = queryArgument.a;
-				var argumentType = queryArgument.b;
-				return $elm$core$Maybe$Just(value);
-			} else {
-				return $elm$core$Maybe$Nothing;
-			}
-		}(
+		return $author$project$Main$queryArgumentToMaybeString(
 			A3(
 				$elm$core$List$foldl,
 				function (str) {
 					return function (queryArgument) {
-						if (queryArgument.$ === 'QueryLeaf') {
-							return queryArgument;
-						} else {
-							var dict = queryArgument.a;
-							return A2(
-								$elm$core$Maybe$withDefault,
-								$author$project$Main$QueryNested($elm$core$Dict$empty),
-								A2($elm$core$Dict$get, str, dict));
+						switch (queryArgument.$) {
+							case 'QueryLeaf':
+								return queryArgument;
+							case 'QueryNested':
+								var dict = queryArgument.a;
+								return A2(
+									$elm$core$Maybe$withDefault,
+									$author$project$Main$QueryNested($elm$core$Dict$empty),
+									A2($elm$core$Dict$get, str, dict));
+							default:
+								return queryArgument;
 						}
 					};
 				},
@@ -9830,6 +9884,9 @@ var $author$project$Main$inputFromTypeRef = F4(
 							$elm$core$Maybe$map,
 							A3($author$project$Main$typeDefToForm, path, dictTypeDef, formDict),
 							A2($elm$core$Dict$get, objectName, dictTypeDef)));
+				case 'List':
+					var listTypeRef = refType.a;
+					return A4($author$project$Main$inputFromTypeRef, path + '[]', dictTypeDef, formDict, listTypeRef);
 				default:
 					return $elm$html$Html$text('TODO: Implement this input type');
 			}

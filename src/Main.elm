@@ -61,6 +61,7 @@ type Msg
 type QueryArgument -- TODO: Need to handle lists here
   = QueryLeaf String ArgumentType
   | QueryNested (Dict.Dict String QueryArgument)
+  | QueryList (List QueryArgument)
 
 type ArgumentType
   = ArgumentString
@@ -202,15 +203,28 @@ getFormAt path formDict =
                 dict
                 |> Dict.get str
                 |> Maybe.withDefault (QueryNested Dict.empty)
+              
+              QueryList _ ->
+                queryArgument
         )
         baseQueryArgument
-    |> \queryArgument ->
+    |> queryArgumentToMaybeString
+
+
+queryArgumentToMaybeString : QueryArgument -> Maybe String
+queryArgumentToMaybeString queryArgument =
         case queryArgument of
             QueryLeaf value argumentType ->
               Just value
             
             QueryNested _ ->
               Nothing
+            
+            QueryList queryList ->
+              queryList
+              |> List.map (\x -> queryArgumentToMaybeString x |> Maybe.withDefault "")
+              |> String.join ","
+              |> Just
 
 
 updateFormAt : String -> ArgumentType -> Maybe String -> (Dict.Dict String (Dict.Dict String QueryArgument)) -> (Dict.Dict String (Dict.Dict String QueryArgument))
@@ -259,6 +273,9 @@ nestedQueryArgumentDictUpdate path argumentType maybeFormValue queryArgumentDict
                             
                             QueryNested dictToUpdate ->
                               Just (QueryNested (nestedQueryArgumentDictUpdate tail argumentType maybeFormValue dictToUpdate))
+
+                            QueryList listQueryArgument ->
+                              Just (QueryList []) -- TODO: We should actually have a [] in the path and branch on the appropriate array index
                   )
 
 apiInteractionsToFieldDict : Result Http.Error ApiInteractions -> (ApiInteractions -> List Type.TypeDefinition) -> Dict.Dict String Type.Field
@@ -751,6 +768,9 @@ inputFromTypeRef path dictTypeDef formDict typeRef =
               |> Maybe.map (typeDefToForm path dictTypeDef formDict)
               |> Maybe.withDefault (text (objectName ++ " not found in the Dict of all objects"))
 
+          Type.List listTypeRef ->
+            inputFromTypeRef (path++"[]") dictTypeDef formDict listTypeRef -- TODO: Probably need to add [] to the path
+
           _ ->
             text "TODO: Implement this input type"
       
@@ -929,6 +949,22 @@ queryArgumentToGraphQlAgument queryArgument =
         |> Dict.map (\_ -> \v -> queryArgumentToGraphQlAgument v)
         |> Dict.toList
         |> GraphQl.input
+
+      QueryList listQueryArgument ->
+        listQueryArgument
+        |> List.map
+           (\x ->
+              case x of
+                  QueryLeaf str _ -> -- TODO: Handle the non-string values
+                    str
+                  
+                  _ ->
+                    "TODO" -- TODO: Handle the nested types
+          )
+        |> List.map (\x -> "\"" ++ x ++ "\"")
+        |> String.join ", "
+        |> (\x -> "[ " ++ x ++ " ]")
+        |> GraphQl.type_
 
 typeRefToSelectors: Int -> Dict.Dict String Type.TypeDefinition -> Type.TypeReference -> GraphQl.Field a -> GraphQl.Field a
 typeRefToSelectors depth dictTypeDef (Type.TypeReference referrableType isNullable) gqlField =

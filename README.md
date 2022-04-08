@@ -45,6 +45,7 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] TODO: Handle Lists in QueryArgument
 - [x] Mutations
 - [x] Change Modal to a whole page
+- [ ] queryArgumentToGraphQlAgument - handle other types of lists
 - [ ] Prettify Camel Case, Snake Case, and all Caps to more human-readable output via a function 
 - [x] Make the URL editable
 - [ ] Use the typeRef of the argument for displaying the form field
