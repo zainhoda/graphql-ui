@@ -66,13 +66,19 @@ Reimplementation of https://github.com/4Catalyzer/graphql-explorer
 - [ ] On edit mode, certain config fields are editable directly
 
 ## Linking UI Elements
-- [ ] List (Tab, Form)
-- [ ] Maybe Form -> Query -> View
-- [ ] View -> Form
-- [ ] Fields -> DisplayView
-- [ ] DisplayView -> FormView population
-- [ ] FormView from Mutation Parameters
-- [ ] Run mutation on FormView submit
+```
+Button "Add Product"
+context: products.data.products
+fields: 
+    dataset -> UpdateFormAt path: "addProduct.input.dataset"
+    name -> UpdateFormAt path: "addProduct.input.name"
+display_form: "addProduct"
+
+```
+- [x] Pass button config to the generic views
+- [x] When the current path matches the context, send the button_config and the the current data to the Msg 
+- [ ] Msg should run a series of updateFormAt, and then set the active form 
+- [ ] Read in configuration from Flags
 
 ## Advanced
 - [ ] Verify config against GraphQL endpoint

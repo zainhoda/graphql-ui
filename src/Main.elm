@@ -33,6 +33,20 @@ type alias Flags = Json.Decode.Value
 
 type alias Config = 
   { graphqlEndpoint: String
+  , buttonConfig: ButtonConfig
+  }
+
+type alias ButtonConfig = List SingleButtonConfig
+type alias SingleButtonConfig =
+  { displayName: String -- "Add Product"
+  , context: String -- products.data.products
+  , fields: List FieldMapping -- mapping from field within the context to the form field
+  , formToDisplay: String -- addProduct
+  }
+
+type alias FieldMapping =
+  { inputField: String -- dataset
+  , formField: String -- addProduct.input.dataset
   }
 
 type alias Model = 
@@ -52,13 +66,14 @@ type Msg
   | UpdateEndpoint String
   | HitEndpoint
   | GotIntrospection (Result Http.Error ApiInteractions)
+  | ConfigurableButtonClick SingleButtonConfig (GenericDict.Dict Generic.Value Generic.Value) 
   | UpdateFormAt String ArgumentType (Maybe String)
   | SubmitForm String Type.TypeReference
   | SetActiveForm (Maybe String)
   | GotQueryResponse String (Result Http.Error String)
   | SetActiveResponse (Maybe String)
 
-type QueryArgument -- TODO: Need to handle lists here
+type QueryArgument
   = QueryLeaf String ArgumentType
   | QueryNested (Dict.Dict String QueryArgument)
   | QueryList (List QueryArgument)
@@ -99,15 +114,29 @@ init flags =
 flagsToMaybeConfig : Flags -> Maybe Config
 flagsToMaybeConfig flags =
   Json.Decode.decodeValue
-  (Json.Decode.field "graphql_endpoint" Json.Decode.string |> Json.Decode.map Config)
+  (Json.Decode.field "graphql_endpoint" Json.Decode.string |> Json.Decode.map defaultConfig)
   flags
   |> Result.toMaybe
+
+defaultConfig : String -> Config
+defaultConfig endpoint =
+  Config
+    endpoint
+    [ { displayName = "Add Product"
+      , context = "products.data.products"
+      , fields = 
+        [ { inputField = "dataset", formField = "addProduct.input.dataset" }
+        , { inputField = "name", formField = "addProduct.input.name" }
+        ]
+      , formToDisplay = "addProduct"
+      } 
+    ]
 
 -- UPDATE
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  case Debug.log "msg" msg of
+  case msg of
     NoOp ->
       ( model, Cmd.none )
 
@@ -115,7 +144,7 @@ update msg model =
       let maybeConfig = model.config
           newConfig = case maybeConfig of
                         Nothing ->
-                          Just { graphqlEndpoint = url }
+                          Just (defaultConfig url)
                         
                         Just config ->
                           Just {config | graphqlEndpoint = url}
@@ -144,12 +173,21 @@ update msg model =
       , Cmd.none
       )
 
-    UpdateFormAt path argumentType maybeFormValue ->
-      ( { model 
-        | formInput = updateFormAt path argumentType maybeFormValue model.formInput
-        } 
+    ConfigurableButtonClick singleButtonConfig dictValueValue ->
+      ( { model
+        | activeForm = Just singleButtonConfig.formToDisplay
+        }
       , Cmd.none
       )
+
+    UpdateFormAt path argumentType maybeFormValue ->
+      let _ = Debug.log "UpdateFormAt path" path
+      in
+        ( { model 
+          | formInput = updateFormAt path argumentType maybeFormValue model.formInput
+          } 
+        , Cmd.none
+        )
 
     SubmitForm formName typeRef ->
       ( { model 
@@ -263,7 +301,7 @@ nestedQueryArgumentDictUpdate path argumentType maybeFormValue queryArgumentDict
               |> Dict.update head
                   (\maybeQueryArgument ->
                     case maybeQueryArgument of
-                        Nothing -> -- Insert using empty Dict
+                        Nothing -> -- Insert using empty Dict. TODO: This should insert a list if the path contains a [
                           Just (QueryNested (nestedQueryArgumentDictUpdate tail argumentType maybeFormValue Dict.empty))
                         
                         Just queryArgument ->
@@ -330,7 +368,12 @@ view model =
       [ configView model.config
       , pre [] [text (Debug.toString model.formInput)]
       , h1 [Html.Attributes.class "title"] [text "Responses"]
-      , tabView model.activeResponse model.response
+      , case model.config of
+          Just config ->
+            tabView config.buttonConfig model.activeResponse model.response
+          
+          Nothing ->
+            text "Unable to parse config"
       , errorView model.introspection
       , apiView model
       ]
@@ -422,8 +465,8 @@ apiView model =
       , ul [] baseTypes
       ]
 
-tabView : Maybe String -> Dict.Dict String (RemoteData.WebData Generic.Value) -> Html Msg
-tabView maybeActiveTab dict =
+tabView : ButtonConfig -> Maybe String -> Dict.Dict String (RemoteData.WebData Generic.Value) -> Html Msg
+tabView buttonConfig maybeActiveTab dict =
   let activeTab = Maybe.withDefault "" maybeActiveTab
       tabList = Dict.toList dict
       maybeTabContents = Dict.get activeTab dict
@@ -445,7 +488,7 @@ tabView maybeActiveTab dict =
     , 
     case maybeTabContents of
       Just tabContents ->
-        webDataView (genericView False) tabContents
+        webDataView (genericView buttonConfig activeTab False) tabContents
       
       Nothing ->
         text ""
@@ -488,46 +531,71 @@ toUtcString time =
   ++ "-" ++
   String.fromInt (Time.toDay Time.utc time)
 
-genericView : Bool -> Generic.Value -> Html Msg
-genericView displayAsTable genericValue =
+genericValueToString : Generic.Value -> String
+genericValueToString genericValue =
   case genericValue of
-      Generic.Null ->
-        text "Null"
-      
-      Generic.Bool b ->
-        text (if b then "✅" else "❌")
-      
-      Generic.Int i ->
-        text (String.fromInt i)
-
-      Generic.Float f ->
-        text (String.fromFloat f)
-      
       Generic.String str ->
-        text str
+        str
+      
+      _ ->
+        "TODO: Unhandled type"
 
-      Generic.List listValue ->
-        genericTableView listValue
+displayButton : ButtonConfig -> String -> GenericDict.Dict Generic.Value Generic.Value -> List (Html Msg)
+displayButton buttonConfig path context =
+  let _ = Debug.log "context" context
+  in
+    buttonConfig
+    |> List.filter (\x -> x.context == path)
+    |> List.map (
+        \x -> 
+          button 
+          [ Html.Attributes.class "button" 
+          , Html.Events.onClick (ConfigurableButtonClick x context)
+          ] 
+          [ text x.displayName ]
+        )
 
-      Generic.Set everySet ->
-        text "TODO: No clue yet how to deal with this set type"
+genericView : ButtonConfig -> String -> Bool -> Generic.Value -> Html Msg
+genericView buttonConfig path displayAsTable genericValue =
+    case genericValue of
+        Generic.Null ->
+          text "Null"
+        
+        Generic.Bool b ->
+          text (if b then "✅" else "❌")
+        
+        Generic.Int i ->
+          text (String.fromInt i)
 
-      Generic.Date posix ->
-        text (toUtcString posix)
+        Generic.Float f ->
+          text (String.fromFloat f)
+        
+        Generic.String str ->
+          text str
 
-      Generic.DateTime posix ->
-        text (toUtcString posix)
+        Generic.List listValue ->
+          genericTableView buttonConfig path listValue
 
-      Generic.Dict dictValueValue ->
-        if displayAsTable then
-          genericFieldView dictValueValue
-        else
-          genericFieldView dictValueValue
+        Generic.Set everySet ->
+          text "TODO: No clue yet how to deal with this set type"
+
+        Generic.Date posix ->
+          text (toUtcString posix)
+
+        Generic.DateTime posix ->
+          text (toUtcString posix)
+
+        Generic.Dict dictValueValue ->
+          if displayAsTable then
+            genericFieldView buttonConfig path dictValueValue
+          else
+            genericFieldView buttonConfig path dictValueValue
 
 
-genericTableView : List Generic.Value -> Html Msg
-genericTableView listValue =
-  let headers =
+genericTableView : ButtonConfig -> String -> List Generic.Value -> Html Msg
+genericTableView buttonConfig path listValue =
+  let buttons = displayButton buttonConfig path
+      headers =
         listValue
         |> List.head
         |> Maybe.map
@@ -536,7 +604,7 @@ genericTableView listValue =
 
               Generic.Dict dictValueValue ->
                 GenericDict.keys dictValueValue
-                |> List.map (genericView False)
+                |> List.map (genericView buttonConfig path False)
     
               _ ->
                 []
@@ -549,9 +617,9 @@ genericTableView listValue =
             case value of
 
               Generic.Dict dictValueValue ->
-                GenericDict.values dictValueValue
-                |> List.map (genericView False)
-    
+                GenericDict.toList dictValueValue
+                |> List.map (\(k, v) -> genericView buttonConfig (path++"."++(genericValueToString k)) False v)
+                |> \x -> x++(buttons dictValueValue)
               _ ->
                 []
           )
@@ -574,8 +642,8 @@ genericTableView listValue =
           )
         ]
       ]
-genericFieldView : GenericDict.Dict Generic.Value Generic.Value -> Html Msg
-genericFieldView dict =
+genericFieldView : ButtonConfig -> String -> GenericDict.Dict Generic.Value Generic.Value -> Html Msg
+genericFieldView buttonConfig path dict =
   let keyValuePairs = GenericDict.toList dict
   in
     div 
@@ -587,8 +655,9 @@ genericFieldView dict =
             |> List.map 
               (\(k, v) -> 
                 tr [] 
-                  [ th [] [genericView True k]
-                  , td [] [genericView True v]
+                  [ th [] [genericView buttonConfig (path++"."++(genericValueToString k)) True k]
+
+                  , td [] [genericView buttonConfig (path++"."++(genericValueToString k)) True v]
                   ]
               )
           )
@@ -769,7 +838,7 @@ inputFromTypeRef path dictTypeDef formDict typeRef =
               |> Maybe.withDefault (text (objectName ++ " not found in the Dict of all objects"))
 
           Type.List listTypeRef ->
-            inputFromTypeRef (path++"[]") dictTypeDef formDict listTypeRef -- TODO: Probably need to add [] to the path
+            inputFromTypeRef (path++"[") dictTypeDef formDict listTypeRef -- TODO: Probably need to add [] to the path
 
           _ ->
             text "TODO: Implement this input type"
@@ -855,11 +924,6 @@ subscriptions _ =
   Sub.none
 
 -- CMD
-
-configDecoder : Json.Decode.Decoder Config
-configDecoder =
-  Json.Decode.field "graphql_endpoint" Json.Decode.string
-  |> Json.Decode.map Config
 
 typesRequest : GraphQl.Operation GraphQl.Query GraphQl.Anonymous
 typesRequest =

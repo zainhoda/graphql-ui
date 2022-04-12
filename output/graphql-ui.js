@@ -5592,10 +5592,29 @@ var $elm$http$Http$BadUrl = function (a) {
 };
 var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
-var $author$project$Main$Config = function (graphqlEndpoint) {
-	return {graphqlEndpoint: graphqlEndpoint};
-};
 var $elm$json$Json$Decode$decodeValue = _Json_run;
+var $author$project$Main$Config = F2(
+	function (graphqlEndpoint, buttonConfig) {
+		return {buttonConfig: buttonConfig, graphqlEndpoint: graphqlEndpoint};
+	});
+var $author$project$Main$defaultConfig = function (endpoint) {
+	return A2(
+		$author$project$Main$Config,
+		endpoint,
+		_List_fromArray(
+			[
+				{
+				context: 'products.data.products',
+				displayName: 'Add Product',
+				fields: _List_fromArray(
+					[
+						{formField: 'addProduct.input.dataset', inputField: 'dataset'},
+						{formField: 'addProduct.input.name', inputField: 'name'}
+					]),
+				formToDisplay: 'addProduct'
+			}
+			]));
+};
 var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $elm$core$Result$toMaybe = function (result) {
@@ -5612,7 +5631,7 @@ var $author$project$Main$flagsToMaybeConfig = function (flags) {
 			$elm$json$Json$Decode$decodeValue,
 			A2(
 				$elm$json$Json$Decode$map,
-				$author$project$Main$Config,
+				$author$project$Main$defaultConfig,
 				A2($elm$json$Json$Decode$field, 'graphql_endpoint', $elm$json$Json$Decode$string)),
 			flags));
 };
@@ -9446,17 +9465,16 @@ var $author$project$Main$updateFormAt = F4(
 	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		var _v0 = A2($elm$core$Debug$log, 'msg', msg);
-		switch (_v0.$) {
+		switch (msg.$) {
 			case 'NoOp':
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 			case 'UpdateEndpoint':
-				var url = _v0.a;
+				var url = msg.a;
 				var maybeConfig = model.config;
 				var newConfig = function () {
 					if (maybeConfig.$ === 'Nothing') {
 						return $elm$core$Maybe$Just(
-							{graphqlEndpoint: url});
+							$author$project$Main$defaultConfig(url));
 					} else {
 						var config = maybeConfig.a;
 						return $elm$core$Maybe$Just(
@@ -9481,7 +9499,7 @@ var $author$project$Main$update = F2(
 						$author$project$Main$runIntrospectionQuery(config.graphqlEndpoint));
 				}
 			case 'GotIntrospection':
-				var apiInteractionsResult = _v0.a;
+				var apiInteractionsResult = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -9502,10 +9520,21 @@ var $author$project$Main$update = F2(
 							types: $author$project$Main$apiInteractionsToTypeDict(apiInteractionsResult)
 						}),
 					$elm$core$Platform$Cmd$none);
+			case 'ConfigurableButtonClick':
+				var singleButtonConfig = msg.a;
+				var dictValueValue = msg.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							activeForm: $elm$core$Maybe$Just(singleButtonConfig.formToDisplay)
+						}),
+					$elm$core$Platform$Cmd$none);
 			case 'UpdateFormAt':
-				var path = _v0.a;
-				var argumentType = _v0.b;
-				var maybeFormValue = _v0.c;
+				var path = msg.a;
+				var argumentType = msg.b;
+				var maybeFormValue = msg.c;
+				var _v3 = A2($elm$core$Debug$log, 'UpdateFormAt path', path);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -9514,8 +9543,8 @@ var $author$project$Main$update = F2(
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'SubmitForm':
-				var formName = _v0.a;
-				var typeRef = _v0.b;
+				var formName = msg.a;
+				var typeRef = msg.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -9540,22 +9569,22 @@ var $author$project$Main$update = F2(
 						}
 					}());
 			case 'SetActiveForm':
-				var maybeForm = _v0.a;
+				var maybeForm = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{activeForm: maybeForm}),
 					$elm$core$Platform$Cmd$none);
 			case 'SetActiveResponse':
-				var maybeResponse = _v0.a;
+				var maybeResponse = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{activeResponse: maybeResponse}),
 					$elm$core$Platform$Cmd$none);
 			default:
-				var key = _v0.a;
-				var result = _v0.b;
+				var key = msg.a;
+				var result = msg.b;
 				var genericValue = $krisajenkins$remotedata$RemoteData$fromResult(
 					A2(
 						$elm$core$Debug$log,
@@ -9886,7 +9915,7 @@ var $author$project$Main$inputFromTypeRef = F4(
 							A2($elm$core$Dict$get, objectName, dictTypeDef)));
 				case 'List':
 					var listTypeRef = refType.a;
-					return A4($author$project$Main$inputFromTypeRef, path + '[]', dictTypeDef, formDict, listTypeRef);
+					return A4($author$project$Main$inputFromTypeRef, path + '[', dictTypeDef, formDict, listTypeRef);
 				default:
 					return $elm$html$Html$text('TODO: Implement this input type');
 			}
@@ -10427,6 +10456,44 @@ var $author$project$Main$errorView = function (result) {
 var $author$project$Main$SetActiveResponse = function (a) {
 	return {$: 'SetActiveResponse', a: a};
 };
+var $author$project$Main$ConfigurableButtonClick = F2(
+	function (a, b) {
+		return {$: 'ConfigurableButtonClick', a: a, b: b};
+	});
+var $author$project$Main$displayButton = F3(
+	function (buttonConfig, path, context) {
+		var _v0 = A2($elm$core$Debug$log, 'context', context);
+		return A2(
+			$elm$core$List$map,
+			function (x) {
+				return A2(
+					$elm$html$Html$button,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('button'),
+							$elm$html$Html$Events$onClick(
+							A2($author$project$Main$ConfigurableButtonClick, x, context))
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(x.displayName)
+						]));
+			},
+			A2(
+				$elm$core$List$filter,
+				function (x) {
+					return _Utils_eq(x.context, path);
+				},
+				buttonConfig));
+	});
+var $author$project$Main$genericValueToString = function (genericValue) {
+	if (genericValue.$ === 'String') {
+		var str = genericValue.a;
+		return str;
+	} else {
+		return 'TODO: Unhandled type';
+	}
+};
 var $edkv$elm_generic_dict$GenericDict$keys = function (_v0) {
 	var dict = _v0.a;
 	return A3(
@@ -10473,165 +10540,180 @@ var $author$project$Main$toUtcString = function (time) {
 	}() + ('-' + $elm$core$String$fromInt(
 		A2($elm$time$Time$toDay, $elm$time$Time$utc, time)))));
 };
-var $edkv$elm_generic_dict$GenericDict$values = function (_v0) {
-	var dict = _v0.a;
-	return A3(
-		$elm$core$Dict$foldr,
-		F2(
-			function (_v1, _v2) {
-				var value = _v2.b;
-				return $elm$core$List$cons(value);
-			}),
-		_List_Nil,
-		dict);
-};
-var $author$project$Main$genericFieldView = function (dict) {
-	var keyValuePairs = $edkv$elm_generic_dict$GenericDict$toList(dict);
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('table-container')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$table,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('table is-striped')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$tbody,
-						_List_Nil,
-						A2(
+var $author$project$Main$genericFieldView = F3(
+	function (buttonConfig, path, dict) {
+		var keyValuePairs = $edkv$elm_generic_dict$GenericDict$toList(dict);
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('table-container')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$table,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('table is-striped')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$tbody,
+							_List_Nil,
+							A2(
+								$elm$core$List$map,
+								function (_v4) {
+									var k = _v4.a;
+									var v = _v4.b;
+									return A2(
+										$elm$html$Html$tr,
+										_List_Nil,
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$th,
+												_List_Nil,
+												_List_fromArray(
+													[
+														A4(
+														$author$project$Main$genericView,
+														buttonConfig,
+														path + ('.' + $author$project$Main$genericValueToString(k)),
+														true,
+														k)
+													])),
+												A2(
+												$elm$html$Html$td,
+												_List_Nil,
+												_List_fromArray(
+													[
+														A4(
+														$author$project$Main$genericView,
+														buttonConfig,
+														path + ('.' + $author$project$Main$genericValueToString(k)),
+														true,
+														v)
+													]))
+											]));
+								},
+								keyValuePairs))
+						]))
+				]));
+	});
+var $author$project$Main$genericTableView = F3(
+	function (buttonConfig, path, listValue) {
+		var headers = A2(
+			$elm$core$Maybe$withDefault,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('')
+				]),
+			A2(
+				$elm$core$Maybe$map,
+				function (value) {
+					if (value.$ === 'Dict') {
+						var dictValueValue = value.a;
+						return A2(
 							$elm$core$List$map,
-							function (_v3) {
-								var k = _v3.a;
-								var v = _v3.b;
-								return A2(
-									$elm$html$Html$tr,
-									_List_Nil,
-									_List_fromArray(
-										[
-											A2(
-											$elm$html$Html$th,
-											_List_Nil,
-											_List_fromArray(
-												[
-													A2($author$project$Main$genericView, true, k)
-												])),
-											A2(
-											$elm$html$Html$td,
-											_List_Nil,
-											_List_fromArray(
-												[
-													A2($author$project$Main$genericView, true, v)
-												]))
-										]));
-							},
-							keyValuePairs))
-					]))
-			]));
-};
-var $author$project$Main$genericTableView = function (listValue) {
-	var headers = A2(
-		$elm$core$Maybe$withDefault,
-		_List_fromArray(
-			[
-				$elm$html$Html$text('')
-			]),
-		A2(
-			$elm$core$Maybe$map,
+							A3($author$project$Main$genericView, buttonConfig, path, false),
+							$edkv$elm_generic_dict$GenericDict$keys(dictValueValue));
+					} else {
+						return _List_Nil;
+					}
+				},
+				$elm$core$List$head(listValue)));
+		var buttons = A2($author$project$Main$displayButton, buttonConfig, path);
+		var contents = A2(
+			$elm$core$List$map,
 			function (value) {
 				if (value.$ === 'Dict') {
 					var dictValueValue = value.a;
-					return A2(
-						$elm$core$List$map,
-						$author$project$Main$genericView(false),
-						$edkv$elm_generic_dict$GenericDict$keys(dictValueValue));
+					return function (x) {
+						return _Utils_ap(
+							x,
+							buttons(dictValueValue));
+					}(
+						A2(
+							$elm$core$List$map,
+							function (_v2) {
+								var k = _v2.a;
+								var v = _v2.b;
+								return A4(
+									$author$project$Main$genericView,
+									buttonConfig,
+									path + ('.' + $author$project$Main$genericValueToString(k)),
+									false,
+									v);
+							},
+							$edkv$elm_generic_dict$GenericDict$toList(dictValueValue)));
 				} else {
 					return _List_Nil;
 				}
 			},
-			$elm$core$List$head(listValue)));
-	var contents = A2(
-		$elm$core$List$map,
-		function (value) {
-			if (value.$ === 'Dict') {
-				var dictValueValue = value.a;
-				return A2(
-					$elm$core$List$map,
-					$author$project$Main$genericView(false),
-					$edkv$elm_generic_dict$GenericDict$values(dictValueValue));
-			} else {
-				return _List_Nil;
-			}
-		},
-		listValue);
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('table-container')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$table,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('table is-striped')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$thead,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$tr,
-								_List_Nil,
-								A2(
-									$elm$core$List$map,
-									function (x) {
-										return A2(
-											$elm$html$Html$th,
-											_List_Nil,
-											_List_fromArray(
-												[x]));
-									},
-									headers))
-							])),
-						A2(
-						$elm$html$Html$tbody,
-						_List_Nil,
-						A2(
-							$elm$core$List$map,
-							function (x) {
-								return A2(
+			listValue);
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('table-container')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$table,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('table is-striped')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$thead,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
 									$elm$html$Html$tr,
 									_List_Nil,
 									A2(
 										$elm$core$List$map,
-										function (y) {
+										function (x) {
 											return A2(
-												$elm$html$Html$td,
+												$elm$html$Html$th,
 												_List_Nil,
 												_List_fromArray(
-													[y]));
+													[x]));
 										},
-										x));
-							},
-							contents))
-					]))
-			]));
-};
-var $author$project$Main$genericView = F2(
-	function (displayAsTable, genericValue) {
+										headers))
+								])),
+							A2(
+							$elm$html$Html$tbody,
+							_List_Nil,
+							A2(
+								$elm$core$List$map,
+								function (x) {
+									return A2(
+										$elm$html$Html$tr,
+										_List_Nil,
+										A2(
+											$elm$core$List$map,
+											function (y) {
+												return A2(
+													$elm$html$Html$td,
+													_List_Nil,
+													_List_fromArray(
+														[y]));
+											},
+											x));
+								},
+								contents))
+						]))
+				]));
+	});
+var $author$project$Main$genericView = F4(
+	function (buttonConfig, path, displayAsTable, genericValue) {
 		switch (genericValue.$) {
 			case 'Null':
 				return $elm$html$Html$text('Null');
@@ -10652,7 +10734,7 @@ var $author$project$Main$genericView = F2(
 				return $elm$html$Html$text(str);
 			case 'List':
 				var listValue = genericValue.a;
-				return $author$project$Main$genericTableView(listValue);
+				return A3($author$project$Main$genericTableView, buttonConfig, path, listValue);
 			case 'Set':
 				var everySet = genericValue.a;
 				return $elm$html$Html$text('TODO: No clue yet how to deal with this set type');
@@ -10666,7 +10748,7 @@ var $author$project$Main$genericView = F2(
 					$author$project$Main$toUtcString(posix));
 			default:
 				var dictValueValue = genericValue.a;
-				return displayAsTable ? $author$project$Main$genericFieldView(dictValueValue) : $author$project$Main$genericFieldView(dictValueValue);
+				return displayAsTable ? A3($author$project$Main$genericFieldView, buttonConfig, path, dictValueValue) : A3($author$project$Main$genericFieldView, buttonConfig, path, dictValueValue);
 		}
 	});
 var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
@@ -10697,8 +10779,8 @@ var $author$project$Main$webDataView = F2(
 				return successView(a);
 		}
 	});
-var $author$project$Main$tabView = F2(
-	function (maybeActiveTab, dict) {
+var $author$project$Main$tabView = F3(
+	function (buttonConfig, maybeActiveTab, dict) {
 		var tabList = $elm$core$Dict$toList(dict);
 		var activeTab = A2($elm$core$Maybe$withDefault, '', maybeActiveTab);
 		var maybeTabContents = A2($elm$core$Dict$get, activeTab, dict);
@@ -10752,7 +10834,7 @@ var $author$project$Main$tabView = F2(
 						var tabContents = maybeTabContents.a;
 						return A2(
 							$author$project$Main$webDataView,
-							$author$project$Main$genericView(false),
+							A3($author$project$Main$genericView, buttonConfig, activeTab, false),
 							tabContents);
 					} else {
 						return $elm$html$Html$text('');
@@ -10788,7 +10870,15 @@ var $author$project$Main$view = function (model) {
 					[
 						$elm$html$Html$text('Responses')
 					])),
-				A2($author$project$Main$tabView, model.activeResponse, model.response),
+				function () {
+				var _v0 = model.config;
+				if (_v0.$ === 'Just') {
+					var config = _v0.a;
+					return A3($author$project$Main$tabView, config.buttonConfig, model.activeResponse, model.response);
+				} else {
+					return $elm$html$Html$text('Unable to parse config');
+				}
+			}(),
 				$author$project$Main$errorView(model.introspection),
 				$author$project$Main$apiView(model)
 			]));
