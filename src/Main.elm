@@ -34,6 +34,7 @@ type alias Flags = Json.Decode.Value
 
 type alias Config = 
   { graphqlEndpoint: String
+  , debugMode: Bool
   , buttonConfig: ButtonConfig
   }
 
@@ -115,8 +116,9 @@ init flags =
 flagsToMaybeConfig : Flags -> Result Json.Decode.Error Config
 flagsToMaybeConfig flags =
   Json.Decode.decodeValue
-  ( Json.Decode.map2 Config
+  ( Json.Decode.map3 Config
     (Json.Decode.field "graphqlEndpoint" Json.Decode.string)
+    (Json.Decode.field "debugMode" Json.Decode.bool)
     (Json.Decode.field "buttonConfig" decodeButtonConfig)
   )
   flags
@@ -143,22 +145,8 @@ defaultConfig : String -> Config
 defaultConfig endpoint =
   Config
     endpoint
-    [ { displayName = "Add Product"
-      , context = "products.data.products"
-      , fields = 
-        [ { inputField = "dataset", formField = "addProduct.input.dataset" }
-        , { inputField = "name", formField = "addProduct.input.name" }
-        ]
-      , formToDisplay = "addProduct"
-      } 
-    , { displayName = "Delete Product"
-      , context = "products.data.products"
-      , fields = 
-        [ { inputField = "id", formField = "removeProduct.input" }
-        ]
-      , formToDisplay = "removeProduct"
-      } 
-    ]
+    True
+    []
 
 -- UPDATE
 
@@ -277,6 +265,12 @@ getFormAt path formDict =
         baseQueryArgument
     |> queryArgumentToMaybeString
 
+
+isDebug : Result Json.Decode.Error Config -> Bool
+isDebug resultConfig =
+  resultConfig
+  |> Result.map (\x -> x.debugMode)
+  |> Result.withDefault True
 
 queryArgumentToMaybeString : QueryArgument -> Maybe String
 queryArgumentToMaybeString queryArgument =
@@ -438,7 +432,10 @@ view model =
           
           _ ->
             webDataView (\_ -> text "") model.introspection
-      , pre [] [text (Debug.toString model.formInput)]
+      , if isDebug model.config then
+          pre [] [text (Debug.toString model.formInput)]
+        else
+          text ""
       , h1 [Html.Attributes.class "title"] [text "Responses"]
       , case model.config of
           Ok config ->
@@ -529,8 +526,13 @@ apiView model =
       , div [Html.Attributes.class "buttons"] queries
       , h1 [Html.Attributes.class "title"] [text "Mutations"]
       , div [Html.Attributes.class "buttons"] mutations
-      , h1 [Html.Attributes.class "title"] [text "Available Types"]
-      , ul [] baseTypes
+      , if isDebug model.config then
+          div []
+          [ h1 [Html.Attributes.class "title"] [text "Available Types"]
+          , ul [] baseTypes
+          ]
+        else
+          text ""
       ]
 
 tabView : ButtonConfig -> Maybe String -> Dict.Dict String (RemoteData.WebData Generic.Value) -> Html Msg
@@ -1139,7 +1141,30 @@ typeRefToSelectors depth dictTypeDef (Type.TypeReference referrableType isNullab
         |> Maybe.withDefault -- We should never get here because the referenced type should exist in the Dict
             (\x -> x)
       Type.UnionRef unionName ->
-        GraphQl.withSelectors [ GraphQl.field "__typename"] -- TODO: Need to expand this. Lookup the union and do the proper ... on query
+        dictTypeDef
+        |> Dict.get unionName
+        |> Maybe.map
+            (\typeDef ->
+              case typeDef of
+                Type.TypeDefinition _ definableType _ ->
+                  case definableType of
+                      Type.UnionType listUnionClassCaseName ->
+                        GraphQl.withSelectors 
+                          ( (GraphQl.field "__typename")
+                          ::
+                          ( listUnionClassCaseName
+                            |> List.map
+                                (\unionClassCaseName ->
+                                    GraphQl.field ("... on " ++ Graphql.Parser.ClassCaseName.raw unionClassCaseName)
+                                    |> typeRefToSelectors depth dictTypeDef (Type.TypeReference (Type.ObjectRef (Graphql.Parser.ClassCaseName.raw unionClassCaseName)) Type.NonNullable) -- Treat this as an object ref. TODO: Is this ok for scalars?? We don't enforce that ObjectRef must go to ObjectType so it might be ok?
+                                )
+                          )   
+                          )
+                      
+                      _ ->
+                        GraphQl.withSelectors [ GraphQl.field "__typename"]                      
+            )
+        |> Maybe.withDefault (GraphQl.withSelectors [ GraphQl.field "__typename"])
       _ -> -- TODO: Are other types even semantically possible in this context?
         GraphQl.withSelectors [ GraphQl.field "id" ]
 

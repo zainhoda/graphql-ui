@@ -5590,10 +5590,11 @@ var $elm$browser$Browser$element = _Browser_element;
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
-var $author$project$Main$Config = F2(
-	function (graphqlEndpoint, buttonConfig) {
-		return {buttonConfig: buttonConfig, graphqlEndpoint: graphqlEndpoint};
+var $author$project$Main$Config = F3(
+	function (graphqlEndpoint, debugMode, buttonConfig) {
+		return {buttonConfig: buttonConfig, debugMode: debugMode, graphqlEndpoint: graphqlEndpoint};
 	});
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $author$project$Main$SingleButtonConfig = F4(
 	function (displayName, context, fields, formToDisplay) {
 		return {context: context, displayName: displayName, fields: fields, formToDisplay: formToDisplay};
@@ -5621,13 +5622,15 @@ var $author$project$Main$decodeButtonConfig = $elm$json$Json$Decode$list(
 		A2($elm$json$Json$Decode$field, 'fields', $author$project$Main$decodeFieldMapping),
 		A2($elm$json$Json$Decode$field, 'formToDisplay', $elm$json$Json$Decode$string)));
 var $elm$json$Json$Decode$decodeValue = _Json_run;
+var $elm$json$Json$Decode$map3 = _Json_map3;
 var $author$project$Main$flagsToMaybeConfig = function (flags) {
 	return A2(
 		$elm$json$Json$Decode$decodeValue,
-		A3(
-			$elm$json$Json$Decode$map2,
+		A4(
+			$elm$json$Json$Decode$map3,
 			$author$project$Main$Config,
 			A2($elm$json$Json$Decode$field, 'graphqlEndpoint', $elm$json$Json$Decode$string),
+			A2($elm$json$Json$Decode$field, 'debugMode', $elm$json$Json$Decode$bool),
 			A2($elm$json$Json$Decode$field, 'buttonConfig', $author$project$Main$decodeButtonConfig)),
 		flags);
 };
@@ -5902,7 +5905,6 @@ var $andre_dietrich$elm_generic$Generic$Null = {$: 'Null'};
 var $andre_dietrich$elm_generic$Generic$String = function (a) {
 	return {$: 'String', a: a};
 };
-var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $andre_dietrich$elm_generic$Generic$Dict = function (a) {
 	return {$: 'Dict', a: a};
 };
@@ -7167,31 +7169,7 @@ var $andre_dietrich$elm_generic$Generic$Json$decode = A2(
 	$elm$core$Result$mapError(
 		$elm$core$Basics$always('Not a valid Json')));
 var $author$project$Main$defaultConfig = function (endpoint) {
-	return A2(
-		$author$project$Main$Config,
-		endpoint,
-		_List_fromArray(
-			[
-				{
-				context: 'products.data.products',
-				displayName: 'Add Product',
-				fields: _List_fromArray(
-					[
-						{formField: 'addProduct.input.dataset', inputField: 'dataset'},
-						{formField: 'addProduct.input.name', inputField: 'name'}
-					]),
-				formToDisplay: 'addProduct'
-			},
-				{
-				context: 'products.data.products',
-				displayName: 'Delete Product',
-				fields: _List_fromArray(
-					[
-						{formField: 'removeProduct.input', inputField: 'id'}
-					]),
-				formToDisplay: 'removeProduct'
-			}
-			]));
+	return A3($author$project$Main$Config, endpoint, true, _List_Nil);
 };
 var $krisajenkins$remotedata$RemoteData$Failure = function (a) {
 	return {$: 'Failure', a: a};
@@ -7297,7 +7275,6 @@ var $author$project$Graphql$Parser$Type$enumValueDecoder = A3(
 		$elm$json$Json$Decode$field,
 		'description',
 		$elm$json$Json$Decode$maybe($elm$json$Json$Decode$string)));
-var $elm$json$Json$Decode$map3 = _Json_map3;
 var $author$project$Graphql$Parser$Type$enumDecoder = A4(
 	$elm$json$Json$Decode$map3,
 	$author$project$Graphql$Parser$Type$createEnum,
@@ -9239,9 +9216,9 @@ var $ghivert$elm_graphql$GraphQl$withSelectors = F2(
 		return A2($ghivert$elm_graphql$GraphQl$Field$addSelectorsIn, value, selectors);
 	});
 var $author$project$Main$typeDefToSelectors = F4(
-	function (depth, dictTypeDef, _v2, gqlField) {
-		var classCaseName = _v2.a;
-		var definableType = _v2.b;
+	function (depth, dictTypeDef, _v4, gqlField) {
+		var classCaseName = _v4.a;
+		var definableType = _v4.b;
 		return function () {
 			switch (definableType.$) {
 				case 'ScalarType':
@@ -9307,11 +9284,48 @@ var $author$project$Main$typeRefToSelectors = F4(
 							A2($elm$core$Dict$get, objectName, dictTypeDef)));
 				case 'UnionRef':
 					var unionName = referrableType.a;
-					return $ghivert$elm_graphql$GraphQl$withSelectors(
-						_List_fromArray(
-							[
-								$ghivert$elm_graphql$GraphQl$field('__typename')
-							]));
+					return A2(
+						$elm$core$Maybe$withDefault,
+						$ghivert$elm_graphql$GraphQl$withSelectors(
+							_List_fromArray(
+								[
+									$ghivert$elm_graphql$GraphQl$field('__typename')
+								])),
+						A2(
+							$elm$core$Maybe$map,
+							function (typeDef) {
+								var definableType = typeDef.b;
+								if (definableType.$ === 'UnionType') {
+									var listUnionClassCaseName = definableType.a;
+									return $ghivert$elm_graphql$GraphQl$withSelectors(
+										A2(
+											$elm$core$List$cons,
+											$ghivert$elm_graphql$GraphQl$field('__typename'),
+											A2(
+												$elm$core$List$map,
+												function (unionClassCaseName) {
+													return A4(
+														$author$project$Main$typeRefToSelectors,
+														depth,
+														dictTypeDef,
+														A2(
+															$author$project$Graphql$Parser$Type$TypeReference,
+															$author$project$Graphql$Parser$Type$ObjectRef(
+																$author$project$Graphql$Parser$ClassCaseName$raw(unionClassCaseName)),
+															$author$project$Graphql$Parser$Type$NonNullable),
+														$ghivert$elm_graphql$GraphQl$field(
+															'... on ' + $author$project$Graphql$Parser$ClassCaseName$raw(unionClassCaseName)));
+												},
+												listUnionClassCaseName)));
+								} else {
+									return $ghivert$elm_graphql$GraphQl$withSelectors(
+										_List_fromArray(
+											[
+												$ghivert$elm_graphql$GraphQl$field('__typename')
+											]));
+								}
+							},
+							A2($elm$core$Dict$get, unionName, dictTypeDef)));
 				default:
 					return $ghivert$elm_graphql$GraphQl$withSelectors(
 						_List_fromArray(
@@ -10286,6 +10300,26 @@ var $author$project$Main$formModal = F3(
 				]));
 	});
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $elm$core$Result$withDefault = F2(
+	function (def, result) {
+		if (result.$ === 'Ok') {
+			var a = result.a;
+			return a;
+		} else {
+			return def;
+		}
+	});
+var $author$project$Main$isDebug = function (resultConfig) {
+	return A2(
+		$elm$core$Result$withDefault,
+		true,
+		A2(
+			$elm$core$Result$map,
+			function (x) {
+				return x.debugMode;
+			},
+			resultConfig));
+};
 var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$html$Html$pre = _VirtualDom_node('pre');
 var $elm$core$Debug$toString = _Debug_toString;
@@ -10413,17 +10447,23 @@ var $author$project$Main$apiView = function (model) {
 						$elm$html$Html$Attributes$class('buttons')
 					]),
 				mutations),
-				A2(
-				$elm$html$Html$h1,
+				$author$project$Main$isDebug(model.config) ? A2(
+				$elm$html$Html$div,
+				_List_Nil,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('title')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Available Types')
-					])),
-				A2($elm$html$Html$ul, _List_Nil, baseTypes)
+						A2(
+						$elm$html$Html$h1,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('title')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Available Types')
+							])),
+						A2($elm$html$Html$ul, _List_Nil, baseTypes)
+					])) : $elm$html$Html$text('')
 			]));
 };
 var $author$project$Main$HitEndpoint = {$: 'HitEndpoint'};
@@ -11044,14 +11084,14 @@ var $author$project$Main$view = function (model) {
 						model.introspection);
 				}
 			}(),
-				A2(
+				$author$project$Main$isDebug(model.config) ? A2(
 				$elm$html$Html$pre,
 				_List_Nil,
 				_List_fromArray(
 					[
 						$elm$html$Html$text(
 						$elm$core$Debug$toString(model.formInput))
-					])),
+					])) : $elm$html$Html$text(''),
 				A2(
 				$elm$html$Html$h1,
 				_List_fromArray(

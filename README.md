@@ -1,7 +1,7 @@
 # graphql-ui
 Autogenerate a user interface (UI) for queries and mutations from a GraphQL schema using introspection
 
-Reimplementation of https://github.com/4Catalyzer/graphql-explorer
+Inspired by https://github.com/4Catalyzer/graphql-explorer
 
 # Goals
 - No backend -- the only backend is the GraphQL endpoint
