@@ -51,8 +51,8 @@ type alias FieldMapping =
   }
 
 type alias Model = 
-  { config: Maybe Config
-  , introspection: Result Http.Error ApiInteractions
+  { config: Result Json.Decode.Error Config
+  , introspection: RemoteData.WebData ApiInteractions
   , queries: Dict.Dict String Type.Field
   , mutations: Dict.Dict String Type.Field
   , types: Dict.Dict String Type.TypeDefinition
@@ -100,7 +100,7 @@ main =
 init : Flags -> ( Model, Cmd Msg )
 init flags =
   ( { config = flagsToMaybeConfig flags 
-    , introspection = Result.Err <| Http.BadUrl "Not Asked Yet -- TODO: Change this to another type"
+    , introspection = RemoteData.NotAsked
     , queries = Dict.empty
     , mutations = Dict.empty
     , types = Dict.empty
@@ -112,12 +112,32 @@ init flags =
   , Cmd.none
   )
 
-flagsToMaybeConfig : Flags -> Maybe Config
+flagsToMaybeConfig : Flags -> Result Json.Decode.Error Config
 flagsToMaybeConfig flags =
   Json.Decode.decodeValue
-  (Json.Decode.field "graphql_endpoint" Json.Decode.string |> Json.Decode.map defaultConfig)
+  ( Json.Decode.map2 Config
+    (Json.Decode.field "graphqlEndpoint" Json.Decode.string)
+    (Json.Decode.field "buttonConfig" decodeButtonConfig)
+  )
   flags
-  |> Result.toMaybe
+
+decodeButtonConfig : Json.Decode.Decoder ButtonConfig
+decodeButtonConfig =
+  Json.Decode.list
+  ( Json.Decode.map4 SingleButtonConfig
+    (Json.Decode.field "displayName" Json.Decode.string)
+    (Json.Decode.field "context" Json.Decode.string)
+    (Json.Decode.field "fields" decodeFieldMapping)
+    (Json.Decode.field "formToDisplay" Json.Decode.string)
+  )
+
+decodeFieldMapping : Json.Decode.Decoder (List FieldMapping)
+decodeFieldMapping =
+  Json.Decode.list
+  ( Json.Decode.map2 FieldMapping
+    (Json.Decode.field "inputField" Json.Decode.string)
+    (Json.Decode.field "formField" Json.Decode.string)
+  )
 
 defaultConfig : String -> Config
 defaultConfig endpoint =
@@ -151,11 +171,11 @@ update msg model =
     UpdateEndpoint url ->
       let maybeConfig = model.config
           newConfig = case maybeConfig of
-                        Nothing ->
-                          Just (defaultConfig url)
+                        Err _ ->
+                          Ok (defaultConfig url)
                         
-                        Just config ->
-                          Just {config | graphqlEndpoint = url}
+                        Ok config ->
+                          Ok {config | graphqlEndpoint = url}
       in
         ( { model 
           | config = newConfig
@@ -165,15 +185,15 @@ update msg model =
     
     HitEndpoint ->
       case model.config of
-        Nothing ->
+        Err _ ->
           (model, Cmd.none)
         
-        Just config ->
+        Ok config ->
           (model, runIntrospectionQuery config.graphqlEndpoint)
 
     GotIntrospection apiInteractionsResult ->
       ( { model 
-        | introspection = apiInteractionsResult
+        | introspection = RemoteData.fromResult apiInteractionsResult
         , queries = apiInteractionsToFieldDict apiInteractionsResult .queries
         , mutations = apiInteractionsToFieldDict apiInteractionsResult .mutations
         , types = apiInteractionsToTypeDict apiInteractionsResult
@@ -412,66 +432,67 @@ apiInteractionsToTypeDict res =
 view : Model -> Html Msg
 view model =
   div [Html.Attributes.class "container"]
-      [ configView model.config
+      [ case model.introspection of
+          RemoteData.NotAsked ->
+            configView model.config
+          
+          _ ->
+            webDataView (\_ -> text "") model.introspection
       , pre [] [text (Debug.toString model.formInput)]
       , h1 [Html.Attributes.class "title"] [text "Responses"]
       , case model.config of
-          Just config ->
+          Ok config ->
             tabView config.buttonConfig model.activeResponse model.response
           
-          Nothing ->
+          Err _ ->
             text "Unable to parse config"
-      , errorView model.introspection
       , apiView model
       ]
 
-configView : Maybe Config -> Html Msg
-configView maybeConfig =
-  div
-    [Html.Attributes.class "field is-horizontal"]
-    [ div [Html.Attributes.class "field-label is-normal"] [label [Html.Attributes.class "label"] [text "GraphQL Endpoint"]]
-    , div 
-      [ Html.Attributes.class "field-body field has-addons" ]
-      [ div 
-        [ Html.Attributes.class "control" ] 
-        [ input 
-          [ Html.Attributes.class "input"
-          , Html.Attributes.type_ "text"
-          , Html.Attributes.value (maybeConfig |> Maybe.map .graphqlEndpoint |> Maybe.withDefault "")
-          , Html.Events.onInput UpdateEndpoint
+configView : Result Json.Decode.Error Config -> Html Msg
+configView resultConfig =
+  div [ class "modal is-active" ]
+      [ div [ class "modal-background" ]
+          []
+      , div [ class "modal-card", Html.Attributes.style "width" "calc(100vw - 30px)"] 
+          [ header [ class "modal-card-head" ]
+              [ p [ class "modal-card-title" ]
+                  [ text "App Configuration" ]
+              , button [ class "delete", Html.Events.onClick (SetActiveForm Nothing) ]
+                  []
+              ]
+          , section [ class "modal-card-body" ]
+              [   div
+                  [Html.Attributes.class "field is-horizontal"]
+                  [ div [Html.Attributes.class "field-label is-normal"] [label [Html.Attributes.class "label"] [text "GraphQL Endpoint"]]
+                  , div 
+                    [ Html.Attributes.class "field-body field has-addons" ]
+                    [ div 
+                      [ Html.Attributes.class "control" ] 
+                      [ input 
+                        [ Html.Attributes.class "input"
+                        , Html.Attributes.type_ "text"
+                        , Html.Attributes.value (resultConfig |> Result.toMaybe |> Maybe.map .graphqlEndpoint |> Maybe.withDefault "")
+                        , Html.Events.onInput UpdateEndpoint
+                        ]
+                        [] 
+                      ]
+                    ]
+                  ]
+              , case resultConfig of
+                  Err e ->
+                    pre [] [text <| Json.Decode.errorToString e]
+                  
+                  Ok config ->
+                    pre [] [text (Debug.toString config)]
+              ]
+          , footer [ class "modal-card-foot" ]
+              [ button [Html.Attributes.class "button is-success" 
+                      , Html.Events.onClick HitEndpoint ] [text "Introspect!"]
+              ]
           ]
-          [] 
-        ]
-      , div 
-        [ Html.Attributes.class "control" ] 
-        [ button [Html.Attributes.class "button is-success" 
-        , Html.Events.onClick HitEndpoint ] [text "Introspect!"]
-        ]
       ]
-    ]
 
-errorView : Result Http.Error a -> Html msg
-errorView result  = 
-  case result of
-      Err error ->
-        case error of
-            Http.BadUrl str ->
-              text <| "Bad Url: " ++ str
-            
-            Http.Timeout ->
-              text "Timeout"
-
-            Http.NetworkError ->
-              text "Network Error"
-
-            Http.BadStatus statusCode ->
-              text <| "Bad Status. Status Code: " ++ (String.fromInt statusCode)
-            
-            Http.BadBody str ->
-              text <| "Bad Body: " ++ str
-
-      Ok contents ->
-        text ""
 
 apiView : Model -> Html Msg
 apiView model = 
@@ -550,11 +571,34 @@ webDataView successView remoteData  =
       RemoteData.Loading ->
         progress [Html.Attributes.class "progress is-large is-info", Html.Attributes.max "100"] [text ""]
       
-      RemoteData.Failure e ->
-        text (Debug.toString e)
+      RemoteData.Failure error ->
+        httpErrorView error
 
       RemoteData.Success a ->
         successView a
+
+httpErrorView : Http.Error -> Html Msg
+httpErrorView error =
+  (case error of
+      Http.BadUrl str ->
+        text <| "Bad Url: " ++ str
+      
+      Http.Timeout ->
+        text "Timeout"
+
+      Http.NetworkError ->
+        text "Network Error"
+
+      Http.BadStatus statusCode ->
+        text <| "Bad Status. Status Code: " ++ (String.fromInt statusCode)
+      
+      Http.BadBody str ->
+        text <| "Bad Body: " ++ str
+  ) |>
+    \x ->
+      div
+        [ Html.Attributes.class "notification is-danger" ]
+        [ x ]
 
 toUtcString : Time.Posix -> String
 toUtcString time =
@@ -596,7 +640,7 @@ displayButton buttonConfig path context =
     |> List.map (
         \x -> 
           button 
-          [ Html.Attributes.class "button" 
+          [ Html.Attributes.class "button is-primary" 
           , Html.Events.onClick (ConfigurableButtonClick x context)
           ] 
           [ text x.displayName ]
@@ -1035,10 +1079,10 @@ submitForm isQuery model formName typeRef =
           ]
   in
     case model.config of
-      Nothing ->
+      Err _ ->
         Cmd.none
       
-      Just config ->
+      Ok config ->
         if isQuery then
           sendQueryRequest config.graphqlEndpoint formName request
         else

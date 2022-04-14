@@ -7,7 +7,7 @@
   <script src="output/graphql-ui.js"></script>
 </head>
 <body>
-  <nav class="navbar is-danger">
+  <nav class="navbar is-primary">
     <div class="navbar-brand">
       <a class="navbar-item">
         GraphQL UI
@@ -38,7 +38,29 @@
   <script>
   var app = Elm.Main.init({
     node: document.getElementById('myapp'),
-    flags: {'graphql_endpoint': '../query'}
+    flags: 
+      { 'graphqlEndpoint': '../query'
+      , 'buttonConfig': 
+        [ { 'displayName': 'Delete Product'
+          , 'context': 'products.data.products'
+          , 'formToDisplay': 'removeProduct'
+          , 'fields': 
+            [ { 'inputField': 'id'
+              , 'formField': 'removeProduct.input'
+              }
+            ]
+          }
+        , { 'displayName': 'Get Targets'
+          , 'context': 'products.data.products'
+          , 'formToDisplay': 'productTargets'
+          , 'fields': 
+            [ { 'inputField': 'id'
+              , 'formField': 'productTargets.id'
+              }
+            ]
+          }
+        ]
+      }
   });
   </script>
 </body>

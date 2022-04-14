@@ -5587,62 +5587,49 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
-var $elm$http$Http$BadUrl = function (a) {
-	return {$: 'BadUrl', a: a};
-};
+var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
-var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$Main$Config = F2(
 	function (graphqlEndpoint, buttonConfig) {
 		return {buttonConfig: buttonConfig, graphqlEndpoint: graphqlEndpoint};
 	});
-var $author$project$Main$defaultConfig = function (endpoint) {
-	return A2(
-		$author$project$Main$Config,
-		endpoint,
-		_List_fromArray(
-			[
-				{
-				context: 'products.data.products',
-				displayName: 'Add Product',
-				fields: _List_fromArray(
-					[
-						{formField: 'addProduct.input.dataset', inputField: 'dataset'},
-						{formField: 'addProduct.input.name', inputField: 'name'}
-					]),
-				formToDisplay: 'addProduct'
-			},
-				{
-				context: 'products.data.products',
-				displayName: 'Delete Product',
-				fields: _List_fromArray(
-					[
-						{formField: 'removeProduct.input', inputField: 'id'}
-					]),
-				formToDisplay: 'removeProduct'
-			}
-			]));
-};
+var $author$project$Main$SingleButtonConfig = F4(
+	function (displayName, context, fields, formToDisplay) {
+		return {context: context, displayName: displayName, fields: fields, formToDisplay: formToDisplay};
+	});
+var $author$project$Main$FieldMapping = F2(
+	function (inputField, formField) {
+		return {formField: formField, inputField: inputField};
+	});
 var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$list = _Json_decodeList;
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $elm$core$Result$toMaybe = function (result) {
-	if (result.$ === 'Ok') {
-		var v = result.a;
-		return $elm$core$Maybe$Just(v);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
+var $author$project$Main$decodeFieldMapping = $elm$json$Json$Decode$list(
+	A3(
+		$elm$json$Json$Decode$map2,
+		$author$project$Main$FieldMapping,
+		A2($elm$json$Json$Decode$field, 'inputField', $elm$json$Json$Decode$string),
+		A2($elm$json$Json$Decode$field, 'formField', $elm$json$Json$Decode$string)));
+var $elm$json$Json$Decode$map4 = _Json_map4;
+var $author$project$Main$decodeButtonConfig = $elm$json$Json$Decode$list(
+	A5(
+		$elm$json$Json$Decode$map4,
+		$author$project$Main$SingleButtonConfig,
+		A2($elm$json$Json$Decode$field, 'displayName', $elm$json$Json$Decode$string),
+		A2($elm$json$Json$Decode$field, 'context', $elm$json$Json$Decode$string),
+		A2($elm$json$Json$Decode$field, 'fields', $author$project$Main$decodeFieldMapping),
+		A2($elm$json$Json$Decode$field, 'formToDisplay', $elm$json$Json$Decode$string)));
+var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$Main$flagsToMaybeConfig = function (flags) {
-	return $elm$core$Result$toMaybe(
-		A2(
-			$elm$json$Json$Decode$decodeValue,
-			A2(
-				$elm$json$Json$Decode$map,
-				$author$project$Main$defaultConfig,
-				A2($elm$json$Json$Decode$field, 'graphql_endpoint', $elm$json$Json$Decode$string)),
-			flags));
+	return A2(
+		$elm$json$Json$Decode$decodeValue,
+		A3(
+			$elm$json$Json$Decode$map2,
+			$author$project$Main$Config,
+			A2($elm$json$Json$Decode$field, 'graphqlEndpoint', $elm$json$Json$Decode$string),
+			A2($elm$json$Json$Decode$field, 'buttonConfig', $author$project$Main$decodeButtonConfig)),
+		flags);
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -5653,8 +5640,7 @@ var $author$project$Main$init = function (flags) {
 			activeResponse: $elm$core$Maybe$Nothing,
 			config: $author$project$Main$flagsToMaybeConfig(flags),
 			formInput: $elm$core$Dict$empty,
-			introspection: $elm$core$Result$Err(
-				$elm$http$Http$BadUrl('Not Asked Yet -- TODO: Change this to another type')),
+			introspection: $krisajenkins$remotedata$RemoteData$NotAsked,
 			mutations: $elm$core$Dict$empty,
 			queries: $elm$core$Dict$empty,
 			response: $elm$core$Dict$empty,
@@ -6338,7 +6324,6 @@ var $elm$json$Json$Decode$lazy = function (thunk) {
 		thunk,
 		$elm$json$Json$Decode$succeed(_Utils_Tuple0));
 };
-var $elm$json$Json$Decode$list = _Json_decodeList;
 var $elm$json$Json$Decode$null = _Json_decodeNull;
 var $elm$json$Json$Decode$oneOf = _Json_oneOf;
 var $andre_dietrich$elm_generic$Generic$Date = function (a) {
@@ -7181,6 +7166,33 @@ var $andre_dietrich$elm_generic$Generic$Json$decode = A2(
 	$elm$json$Json$Decode$decodeString($andre_dietrich$elm_generic$Generic$Json$decoder),
 	$elm$core$Result$mapError(
 		$elm$core$Basics$always('Not a valid Json')));
+var $author$project$Main$defaultConfig = function (endpoint) {
+	return A2(
+		$author$project$Main$Config,
+		endpoint,
+		_List_fromArray(
+			[
+				{
+				context: 'products.data.products',
+				displayName: 'Add Product',
+				fields: _List_fromArray(
+					[
+						{formField: 'addProduct.input.dataset', inputField: 'dataset'},
+						{formField: 'addProduct.input.name', inputField: 'name'}
+					]),
+				formToDisplay: 'addProduct'
+			},
+				{
+				context: 'products.data.products',
+				displayName: 'Delete Product',
+				fields: _List_fromArray(
+					[
+						{formField: 'removeProduct.input', inputField: 'id'}
+					]),
+				formToDisplay: 'removeProduct'
+			}
+			]));
+};
 var $krisajenkins$remotedata$RemoteData$Failure = function (a) {
 	return {$: 'Failure', a: a};
 };
@@ -7312,7 +7324,6 @@ var $author$project$Graphql$Parser$Type$RawField = F4(
 	function (name, description, ofType, args) {
 		return {args: args, description: description, name: name, ofType: ofType};
 	});
-var $elm$json$Json$Decode$map4 = _Json_map4;
 var $author$project$Graphql$Parser$Type$RawTypeRef = function (a) {
 	return {$: 'RawTypeRef', a: a};
 };
@@ -8648,6 +8659,9 @@ var $elm$http$Http$expectStringResponse = F2(
 var $elm$http$Http$BadStatus = function (a) {
 	return {$: 'BadStatus', a: a};
 };
+var $elm$http$Http$BadUrl = function (a) {
+	return {$: 'BadUrl', a: a};
+};
 var $elm$http$Http$NetworkError = {$: 'NetworkError'};
 var $elm$http$Http$Timeout = {$: 'Timeout'};
 var $elm$http$Http$resolve = F2(
@@ -9367,7 +9381,7 @@ var $author$project$Main$submitForm = F4(
 						$ghivert$elm_graphql$GraphQl$field(formName)))
 				]));
 		var _v0 = model.config;
-		if (_v0.$ === 'Nothing') {
+		if (_v0.$ === 'Err') {
 			return $elm$core$Platform$Cmd$none;
 		} else {
 			var config = _v0.a;
@@ -9547,12 +9561,12 @@ var $author$project$Main$update = F2(
 				var url = msg.a;
 				var maybeConfig = model.config;
 				var newConfig = function () {
-					if (maybeConfig.$ === 'Nothing') {
-						return $elm$core$Maybe$Just(
+					if (maybeConfig.$ === 'Err') {
+						return $elm$core$Result$Ok(
 							$author$project$Main$defaultConfig(url));
 					} else {
 						var config = maybeConfig.a;
-						return $elm$core$Maybe$Just(
+						return $elm$core$Result$Ok(
 							_Utils_update(
 								config,
 								{graphqlEndpoint: url}));
@@ -9565,7 +9579,7 @@ var $author$project$Main$update = F2(
 					$elm$core$Platform$Cmd$none);
 			case 'HitEndpoint':
 				var _v2 = model.config;
-				if (_v2.$ === 'Nothing') {
+				if (_v2.$ === 'Err') {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				} else {
 					var config = _v2.a;
@@ -9579,7 +9593,7 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							introspection: apiInteractionsResult,
+							introspection: $krisajenkins$remotedata$RemoteData$fromResult(apiInteractionsResult),
 							mutations: A2(
 								$author$project$Main$apiInteractionsToFieldDict,
 								apiInteractionsResult,
@@ -10417,12 +10431,20 @@ var $author$project$Main$UpdateEndpoint = function (a) {
 	return {$: 'UpdateEndpoint', a: a};
 };
 var $elm$html$Html$label = _VirtualDom_node('label');
-var $author$project$Main$configView = function (maybeConfig) {
+var $elm$core$Result$toMaybe = function (result) {
+	if (result.$ === 'Ok') {
+		var v = result.a;
+		return $elm$core$Maybe$Just(v);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$Main$configView = function (resultConfig) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('field is-horizontal')
+				$elm$html$Html$Attributes$class('modal is-active')
 			]),
 		_List_fromArray(
 			[
@@ -10430,62 +10452,148 @@ var $author$project$Main$configView = function (maybeConfig) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('field-label is-normal')
+						$elm$html$Html$Attributes$class('modal-background')
 					]),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$label,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('label')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('GraphQL Endpoint')
-							]))
-					])),
+				_List_Nil),
 				A2(
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('field-body field has-addons')
+						$elm$html$Html$Attributes$class('modal-card'),
+						A2($elm$html$Html$Attributes$style, 'width', 'calc(100vw - 30px)')
 					]),
 				_List_fromArray(
 					[
 						A2(
-						$elm$html$Html$div,
+						$elm$html$Html$header,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$class('control')
+								$elm$html$Html$Attributes$class('modal-card-head')
 							]),
 						_List_fromArray(
 							[
 								A2(
-								$elm$html$Html$input,
+								$elm$html$Html$p,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$class('input'),
-										$elm$html$Html$Attributes$type_('text'),
-										$elm$html$Html$Attributes$value(
-										A2(
-											$elm$core$Maybe$withDefault,
-											'',
-											A2(
-												$elm$core$Maybe$map,
-												function ($) {
-													return $.graphqlEndpoint;
-												},
-												maybeConfig))),
-										$elm$html$Html$Events$onInput($author$project$Main$UpdateEndpoint)
+										$elm$html$Html$Attributes$class('modal-card-title')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('App Configuration')
+									])),
+								A2(
+								$elm$html$Html$button,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('delete'),
+										$elm$html$Html$Events$onClick(
+										$author$project$Main$SetActiveForm($elm$core$Maybe$Nothing))
 									]),
 								_List_Nil)
 							])),
 						A2(
-						$elm$html$Html$div,
+						$elm$html$Html$section,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$class('control')
+								$elm$html$Html$Attributes$class('modal-card-body')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$div,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('field is-horizontal')
+									]),
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$div,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$class('field-label is-normal')
+											]),
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$label,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$class('label')
+													]),
+												_List_fromArray(
+													[
+														$elm$html$Html$text('GraphQL Endpoint')
+													]))
+											])),
+										A2(
+										$elm$html$Html$div,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$class('field-body field has-addons')
+											]),
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$div,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$class('control')
+													]),
+												_List_fromArray(
+													[
+														A2(
+														$elm$html$Html$input,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('input'),
+																$elm$html$Html$Attributes$type_('text'),
+																$elm$html$Html$Attributes$value(
+																A2(
+																	$elm$core$Maybe$withDefault,
+																	'',
+																	A2(
+																		$elm$core$Maybe$map,
+																		function ($) {
+																			return $.graphqlEndpoint;
+																		},
+																		$elm$core$Result$toMaybe(resultConfig)))),
+																$elm$html$Html$Events$onInput($author$project$Main$UpdateEndpoint)
+															]),
+														_List_Nil)
+													]))
+											]))
+									])),
+								function () {
+								if (resultConfig.$ === 'Err') {
+									var e = resultConfig.a;
+									return A2(
+										$elm$html$Html$pre,
+										_List_Nil,
+										_List_fromArray(
+											[
+												$elm$html$Html$text(
+												$elm$json$Json$Decode$errorToString(e))
+											]));
+								} else {
+									var config = resultConfig.a;
+									return A2(
+										$elm$html$Html$pre,
+										_List_Nil,
+										_List_fromArray(
+											[
+												$elm$html$Html$text(
+												$elm$core$Debug$toString(config))
+											]));
+								}
+							}()
+							])),
+						A2(
+						$elm$html$Html$footer,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('modal-card-foot')
 							]),
 						_List_fromArray(
 							[
@@ -10504,30 +10612,6 @@ var $author$project$Main$configView = function (maybeConfig) {
 					]))
 			]));
 };
-var $author$project$Main$errorView = function (result) {
-	if (result.$ === 'Err') {
-		var error = result.a;
-		switch (error.$) {
-			case 'BadUrl':
-				var str = error.a;
-				return $elm$html$Html$text('Bad Url: ' + str);
-			case 'Timeout':
-				return $elm$html$Html$text('Timeout');
-			case 'NetworkError':
-				return $elm$html$Html$text('Network Error');
-			case 'BadStatus':
-				var statusCode = error.a;
-				return $elm$html$Html$text(
-					'Bad Status. Status Code: ' + $elm$core$String$fromInt(statusCode));
-			default:
-				var str = error.a;
-				return $elm$html$Html$text('Bad Body: ' + str);
-		}
-	} else {
-		var contents = result.a;
-		return $elm$html$Html$text('');
-	}
-};
 var $author$project$Main$SetActiveResponse = function (a) {
 	return {$: 'SetActiveResponse', a: a};
 };
@@ -10545,7 +10629,7 @@ var $author$project$Main$displayButton = F3(
 					$elm$html$Html$button,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('button'),
+							$elm$html$Html$Attributes$class('button is-primary'),
 							$elm$html$Html$Events$onClick(
 							A2($author$project$Main$ConfigurableButtonClick, x, context))
 						]),
@@ -10818,6 +10902,36 @@ var $author$project$Main$genericView = F4(
 				return displayAsTable ? A3($author$project$Main$genericFieldView, buttonConfig, path, dictValueValue) : A3($author$project$Main$genericFieldView, buttonConfig, path, dictValueValue);
 		}
 	});
+var $author$project$Main$httpErrorView = function (error) {
+	return function (x) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('notification is-danger')
+				]),
+			_List_fromArray(
+				[x]));
+	}(
+		function () {
+			switch (error.$) {
+				case 'BadUrl':
+					var str = error.a;
+					return $elm$html$Html$text('Bad Url: ' + str);
+				case 'Timeout':
+					return $elm$html$Html$text('Timeout');
+				case 'NetworkError':
+					return $elm$html$Html$text('Network Error');
+				case 'BadStatus':
+					var statusCode = error.a;
+					return $elm$html$Html$text(
+						'Bad Status. Status Code: ' + $elm$core$String$fromInt(statusCode));
+				default:
+					var str = error.a;
+					return $elm$html$Html$text('Bad Body: ' + str);
+			}
+		}());
+};
 var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
 var $elm$html$Html$progress = _VirtualDom_node('progress');
 var $author$project$Main$webDataView = F2(
@@ -10838,9 +10952,8 @@ var $author$project$Main$webDataView = F2(
 							$elm$html$Html$text('')
 						]));
 			case 'Failure':
-				var e = remoteData.a;
-				return $elm$html$Html$text(
-					$elm$core$Debug$toString(e));
+				var error = remoteData.a;
+				return $author$project$Main$httpErrorView(error);
 			default:
 				var a = remoteData.a;
 				return successView(a);
@@ -10918,7 +11031,19 @@ var $author$project$Main$view = function (model) {
 			]),
 		_List_fromArray(
 			[
-				$author$project$Main$configView(model.config),
+				function () {
+				var _v0 = model.introspection;
+				if (_v0.$ === 'NotAsked') {
+					return $author$project$Main$configView(model.config);
+				} else {
+					return A2(
+						$author$project$Main$webDataView,
+						function (_v1) {
+							return $elm$html$Html$text('');
+						},
+						model.introspection);
+				}
+			}(),
 				A2(
 				$elm$html$Html$pre,
 				_List_Nil,
@@ -10938,15 +11063,14 @@ var $author$project$Main$view = function (model) {
 						$elm$html$Html$text('Responses')
 					])),
 				function () {
-				var _v0 = model.config;
-				if (_v0.$ === 'Just') {
-					var config = _v0.a;
+				var _v2 = model.config;
+				if (_v2.$ === 'Ok') {
+					var config = _v2.a;
 					return A3($author$project$Main$tabView, config.buttonConfig, model.activeResponse, model.response);
 				} else {
 					return $elm$html$Html$text('Unable to parse config');
 				}
 			}(),
-				$author$project$Main$errorView(model.introspection),
 				$author$project$Main$apiView(model)
 			]));
 };
