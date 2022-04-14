@@ -6,6 +6,7 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
+            "Chadtech/unique-list": "2.1.5",
             "andre-dietrich/elm-generic": "2.0.0",
             "edkv/elm-generic-dict": "1.0.0",
             "elm/browser": "1.0.2",

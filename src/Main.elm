@@ -28,6 +28,8 @@ import Time
 import Graphql.Parser.Scalar exposing (Scalar(..))
 import GraphQl exposing (query)
 import Json.Decode exposing (field)
+import Set
+import List.Unique
 
 -- TYPES
 type alias Flags = Json.Decode.Value
@@ -317,8 +319,8 @@ getValueAt : String -> GenericDict.Dict Generic.Value Generic.Value -> Maybe Str
 getValueAt field context =
   let fieldWithoutDot = String.replace "." "" field -- in case there's an errant dot, remove it
   in
-    GenericDict.get genericValueToString (Generic.String ("\"" ++ fieldWithoutDot ++ "\"")) context
-    |> Maybe.map genericValueToString
+    GenericDict.get genericValueToStringWithQuotes (Generic.String (fieldWithoutDot)) context
+    |> Maybe.map genericValueToStringWithoutQuotes
 
 
 getArgumentTypeAt : String -> Dict.Dict String Type.TypeDefinition -> ArgumentType
@@ -624,11 +626,21 @@ toUtcString time =
   ++ "-" ++
   String.fromInt (Time.toDay Time.utc time)
 
-genericValueToString : Generic.Value -> String
-genericValueToString genericValue =
+genericValueToStringWithoutQuotes : Generic.Value -> String
+genericValueToStringWithoutQuotes genericValue =
   case genericValue of
       Generic.String str ->
         str
+      
+      _ ->
+        "TODO: Unhandled type"
+
+
+genericValueToStringWithQuotes : Generic.Value -> String
+genericValueToStringWithQuotes genericValue =
+  case genericValue of
+      Generic.String str ->
+        "\"" ++ str ++ "\""
       
       _ ->
         "TODO: Unhandled type"
@@ -652,7 +664,7 @@ genericView : ButtonConfig -> String -> Bool -> Generic.Value -> Html Msg
 genericView buttonConfig path displayAsTable genericValue =
     case genericValue of
         Generic.Null ->
-          text "Null"
+          span [class "tag is-warning"] [text "Null"]
         
         Generic.Bool b ->
           text (if b then "✅" else "❌")
@@ -688,21 +700,36 @@ genericView buttonConfig path displayAsTable genericValue =
 genericTableView : ButtonConfig -> String -> List Generic.Value -> Html Msg
 genericTableView buttonConfig path listValue =
   let buttons = displayButton buttonConfig path
+      allFields = 
+        listValue 
+        |> List.map 
+            (\value ->
+                case value of
+                    Generic.Dict dictValueValue ->
+                      GenericDict.keys dictValueValue
+                    
+                    _ ->
+                      []
+            )
+        |> List.concat
+        |> List.Unique.filterDuplicates
       headers =
-        listValue
-        |> List.head
-        |> Maybe.map
-          (\value -> 
-            case value of
+        allFields
+        |> List.map (genericView buttonConfig path False)
+        -- listValue
+        -- |> List.head
+        -- |> Maybe.map
+        --   (\value -> 
+        --     case value of
 
-              Generic.Dict dictValueValue ->
-                GenericDict.keys dictValueValue
-                |> List.map (genericView buttonConfig path False)
+        --       Generic.Dict dictValueValue ->
+        --         GenericDict.keys dictValueValue
+        --         |> List.map (genericView buttonConfig path False)
     
-              _ ->
-                []
-          )
-        |> Maybe.withDefault [(text "")]
+        --       _ ->
+        --         []
+        --   )
+        -- |> Maybe.withDefault [(text "")]
       contents =
         listValue
         |> List.map
@@ -710,8 +737,17 @@ genericTableView buttonConfig path listValue =
             case value of
 
               Generic.Dict dictValueValue ->
-                GenericDict.toList dictValueValue
-                |> List.map (\(k, v) -> genericView buttonConfig (path++"."++(genericValueToString k)) False v)
+                -- GenericDict.toList dictValueValue
+                -- |> List.map (\(k, v) -> genericView buttonConfig (path++"."++(genericValueToString k)) False v)
+                -- |> \x -> x++(buttons dictValueValue)
+                allFields
+                |> List.map 
+                    (\k ->
+                      dictValueValue
+                      |> GenericDict.get genericValueToStringWithQuotes k
+                      |> Maybe.map (\v -> genericView buttonConfig (path++"."++(genericValueToStringWithoutQuotes k)) False v)
+                      |> Maybe.withDefault (span [Html.Attributes.class "tag is-light"] [text "N/A"])
+                    )
                 |> \x -> x++(buttons dictValueValue)
               _ ->
                 []
@@ -748,9 +784,9 @@ genericFieldView buttonConfig path dict =
             |> List.map 
               (\(k, v) -> 
                 tr [] 
-                  [ th [] [genericView buttonConfig (path++"."++(genericValueToString k)) True k]
+                  [ th [] [genericView buttonConfig (path++"."++(genericValueToStringWithoutQuotes k)) True k]
 
-                  , td [] [genericView buttonConfig (path++"."++(genericValueToString k)) True v]
+                  , td [] [genericView buttonConfig (path++"."++(genericValueToStringWithoutQuotes k)) True v]
                   ]
               )
           )

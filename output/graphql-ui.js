@@ -9505,7 +9505,15 @@ var $author$project$Main$getArgumentTypeAt = F2(
 	function (path, types) {
 		return $author$project$Main$ArgumentString;
 	});
-var $author$project$Main$genericValueToString = function (genericValue) {
+var $author$project$Main$genericValueToStringWithQuotes = function (genericValue) {
+	if (genericValue.$ === 'String') {
+		var str = genericValue.a;
+		return '\"' + (str + '\"');
+	} else {
+		return 'TODO: Unhandled type';
+	}
+};
+var $author$project$Main$genericValueToStringWithoutQuotes = function (genericValue) {
 	if (genericValue.$ === 'String') {
 		var str = genericValue.a;
 		return str;
@@ -9533,11 +9541,11 @@ var $author$project$Main$getValueAt = F2(
 		var fieldWithoutDot = A3($elm$core$String$replace, '.', '', field);
 		return A2(
 			$elm$core$Maybe$map,
-			$author$project$Main$genericValueToString,
+			$author$project$Main$genericValueToStringWithoutQuotes,
 			A3(
 				$edkv$elm_generic_dict$GenericDict$get,
-				$author$project$Main$genericValueToString,
-				$andre_dietrich$elm_generic$Generic$String('\"' + (fieldWithoutDot + '\"')),
+				$author$project$Main$genericValueToStringWithQuotes,
+				$andre_dietrich$elm_generic$Generic$String(fieldWithoutDot),
 				context));
 	});
 var $author$project$Main$updateFormFromConfig = F4(
@@ -10685,6 +10693,52 @@ var $author$project$Main$displayButton = F3(
 				},
 				buttonConfig));
 	});
+var $Chadtech$unique_list$List$Unique$UniqueList = function (a) {
+	return {$: 'UniqueList', a: a};
+};
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var $elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			$elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
+var $Chadtech$unique_list$List$Unique$consIfNotMember = F2(
+	function (el, list) {
+		return A2($elm$core$List$member, el, list) ? list : A2($elm$core$List$cons, el, list);
+	});
+var $Chadtech$unique_list$List$Unique$fromList = function (list) {
+	return $Chadtech$unique_list$List$Unique$UniqueList(
+		A3($elm$core$List$foldr, $Chadtech$unique_list$List$Unique$consIfNotMember, _List_Nil, list));
+};
+var $Chadtech$unique_list$List$Unique$toList = function (_v0) {
+	var list = _v0.a;
+	return list;
+};
+var $Chadtech$unique_list$List$Unique$filterDuplicates = A2($elm$core$Basics$composeR, $Chadtech$unique_list$List$Unique$fromList, $Chadtech$unique_list$List$Unique$toList);
 var $edkv$elm_generic_dict$GenericDict$keys = function (_v0) {
 	var dict = _v0.a;
 	return A3(
@@ -10697,6 +10751,7 @@ var $edkv$elm_generic_dict$GenericDict$keys = function (_v0) {
 		_List_Nil,
 		dict);
 };
+var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$html$Html$thead = _VirtualDom_node('thead');
 var $author$project$Main$toUtcString = function (time) {
 	return $elm$core$String$fromInt(
@@ -10755,9 +10810,9 @@ var $author$project$Main$genericFieldView = F3(
 							_List_Nil,
 							A2(
 								$elm$core$List$map,
-								function (_v4) {
-									var k = _v4.a;
-									var v = _v4.b;
+								function (_v3) {
+									var k = _v3.a;
+									var v = _v3.b;
 									return A2(
 										$elm$html$Html$tr,
 										_List_Nil,
@@ -10771,7 +10826,7 @@ var $author$project$Main$genericFieldView = F3(
 														A4(
 														$author$project$Main$genericView,
 														buttonConfig,
-														path + ('.' + $author$project$Main$genericValueToString(k)),
+														path + ('.' + $author$project$Main$genericValueToStringWithoutQuotes(k)),
 														true,
 														k)
 													])),
@@ -10783,7 +10838,7 @@ var $author$project$Main$genericFieldView = F3(
 														A4(
 														$author$project$Main$genericView,
 														buttonConfig,
-														path + ('.' + $author$project$Main$genericValueToString(k)),
+														path + ('.' + $author$project$Main$genericValueToStringWithoutQuotes(k)),
 														true,
 														v)
 													]))
@@ -10795,27 +10850,20 @@ var $author$project$Main$genericFieldView = F3(
 	});
 var $author$project$Main$genericTableView = F3(
 	function (buttonConfig, path, listValue) {
-		var headers = A2(
-			$elm$core$Maybe$withDefault,
-			_List_fromArray(
-				[
-					$elm$html$Html$text('')
-				]),
-			A2(
-				$elm$core$Maybe$map,
-				function (value) {
-					if (value.$ === 'Dict') {
-						var dictValueValue = value.a;
-						return A2(
-							$elm$core$List$map,
-							A3($author$project$Main$genericView, buttonConfig, path, false),
-							$edkv$elm_generic_dict$GenericDict$keys(dictValueValue));
-					} else {
-						return _List_Nil;
-					}
-				},
-				$elm$core$List$head(listValue)));
 		var buttons = A2($author$project$Main$displayButton, buttonConfig, path);
+		var allFields = $Chadtech$unique_list$List$Unique$filterDuplicates(
+			$elm$core$List$concat(
+				A2(
+					$elm$core$List$map,
+					function (value) {
+						if (value.$ === 'Dict') {
+							var dictValueValue = value.a;
+							return $edkv$elm_generic_dict$GenericDict$keys(dictValueValue);
+						} else {
+							return _List_Nil;
+						}
+					},
+					listValue)));
 		var contents = A2(
 			$elm$core$List$map,
 			function (value) {
@@ -10828,22 +10876,41 @@ var $author$project$Main$genericTableView = F3(
 					}(
 						A2(
 							$elm$core$List$map,
-							function (_v2) {
-								var k = _v2.a;
-								var v = _v2.b;
-								return A4(
-									$author$project$Main$genericView,
-									buttonConfig,
-									path + ('.' + $author$project$Main$genericValueToString(k)),
-									false,
-									v);
+							function (k) {
+								return A2(
+									$elm$core$Maybe$withDefault,
+									A2(
+										$elm$html$Html$span,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$class('tag is-light')
+											]),
+										_List_fromArray(
+											[
+												$elm$html$Html$text('N/A')
+											])),
+									A2(
+										$elm$core$Maybe$map,
+										function (v) {
+											return A4(
+												$author$project$Main$genericView,
+												buttonConfig,
+												path + ('.' + $author$project$Main$genericValueToStringWithoutQuotes(k)),
+												false,
+												v);
+										},
+										A3($edkv$elm_generic_dict$GenericDict$get, $author$project$Main$genericValueToStringWithQuotes, k, dictValueValue)));
 							},
-							$edkv$elm_generic_dict$GenericDict$toList(dictValueValue)));
+							allFields));
 				} else {
 					return _List_Nil;
 				}
 			},
 			listValue);
+		var headers = A2(
+			$elm$core$List$map,
+			A3($author$project$Main$genericView, buttonConfig, path, false),
+			allFields);
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -10907,7 +10974,16 @@ var $author$project$Main$genericView = F4(
 	function (buttonConfig, path, displayAsTable, genericValue) {
 		switch (genericValue.$) {
 			case 'Null':
-				return $elm$html$Html$text('Null');
+				return A2(
+					$elm$html$Html$span,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('tag is-warning')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Null')
+						]));
 			case 'Bool':
 				var b = genericValue.a;
 				return $elm$html$Html$text(
