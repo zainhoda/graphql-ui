@@ -21,7 +21,7 @@ Out of the box, all you have to do is specify a GraphQL endpoint.
 You are getting the stylesheet and the compiled JavaScript
 ```html
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
-<script src="https://cdn.jsdelivr.net/gh/zainhoda/graphql-ui/output@0.1/graphql-ui.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/zainhoda/graphql-ui@0.1/output/graphql-ui.min.js"></script>
 ```
 
 ## Inside the body of your HTML
