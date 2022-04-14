@@ -27,6 +27,7 @@ import RemoteData
 import Time
 import Graphql.Parser.Scalar exposing (Scalar(..))
 import GraphQl exposing (query)
+import Json.Decode exposing (field)
 
 -- TYPES
 type alias Flags = Json.Decode.Value
@@ -130,6 +131,13 @@ defaultConfig endpoint =
         ]
       , formToDisplay = "addProduct"
       } 
+    , { displayName = "Delete Product"
+      , context = "products.data.products"
+      , fields = 
+        [ { inputField = "id", formField = "removeProduct.input" }
+        ]
+      , formToDisplay = "removeProduct"
+      } 
     ]
 
 -- UPDATE
@@ -176,6 +184,7 @@ update msg model =
     ConfigurableButtonClick singleButtonConfig dictValueValue ->
       ( { model
         | activeForm = Just singleButtonConfig.formToDisplay
+        , formInput = updateFormFromConfig singleButtonConfig dictValueValue model.types model.formInput
         }
       , Cmd.none
       )
@@ -263,6 +272,44 @@ queryArgumentToMaybeString queryArgument =
               |> List.map (\x -> queryArgumentToMaybeString x |> Maybe.withDefault "")
               |> String.join ","
               |> Just
+
+
+updateFormFromConfig : SingleButtonConfig -> (GenericDict.Dict Generic.Value Generic.Value) -> Dict.Dict String Type.TypeDefinition -> (Dict.Dict String (Dict.Dict String QueryArgument)) -> (Dict.Dict String (Dict.Dict String QueryArgument))
+updateFormFromConfig singleButtonConfig context types formDict =
+  -- For each field in the config
+  --  Get the value from the context
+  --  Set the value based on the path
+  -- How do we get the ArgumentType though?
+  --    typeRefToArgumentType : Type.TypeReference -> ArgumentType
+  --    model.types : Dict.Dict String Type.TypeDefinition
+  -- Need a function that takes path and model.types and returns ArgumentType
+  singleButtonConfig.fields
+  |> List.map 
+      (\field ->
+        ( Debug.log "getValueAt" <| getValueAt field.inputField context -- Maybe String
+        , field.formField -- String (i.e. addProduct.input.dataset)
+        , getArgumentTypeAt (singleButtonConfig.context ++ "." ++ field.inputField) types -- ArgumentType
+        )
+      )
+  |> List.foldl 
+      (\(maybeFormValue, formField, argumentType) -> \dict ->
+        updateFormAt formField argumentType maybeFormValue dict
+      )
+      formDict
+  
+--   formDict
+
+getValueAt : String -> GenericDict.Dict Generic.Value Generic.Value -> Maybe String
+getValueAt field context =
+  let fieldWithoutDot = String.replace "." "" field -- in case there's an errant dot, remove it
+  in
+    GenericDict.get genericValueToString (Generic.String ("\"" ++ fieldWithoutDot ++ "\"")) context
+    |> Maybe.map genericValueToString
+
+
+getArgumentTypeAt : String -> Dict.Dict String Type.TypeDefinition -> ArgumentType
+getArgumentTypeAt path types =
+  ArgumentString -- TODO: Just a placeholder. Look up the real type.
 
 
 updateFormAt : String -> ArgumentType -> Maybe String -> (Dict.Dict String (Dict.Dict String QueryArgument)) -> (Dict.Dict String (Dict.Dict String QueryArgument))

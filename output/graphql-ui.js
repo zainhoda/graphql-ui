@@ -5612,6 +5612,15 @@ var $author$project$Main$defaultConfig = function (endpoint) {
 						{formField: 'addProduct.input.name', inputField: 'name'}
 					]),
 				formToDisplay: 'addProduct'
+			},
+				{
+				context: 'products.data.products',
+				displayName: 'Delete Product',
+				fields: _List_fromArray(
+					[
+						{formField: 'removeProduct.input', inputField: 'id'}
+					]),
+				formToDisplay: 'removeProduct'
 			}
 			]));
 };
@@ -9463,6 +9472,72 @@ var $author$project$Main$updateFormAt = F4(
 			},
 			formDict);
 	});
+var $author$project$Main$ArgumentString = {$: 'ArgumentString'};
+var $author$project$Main$getArgumentTypeAt = F2(
+	function (path, types) {
+		return $author$project$Main$ArgumentString;
+	});
+var $author$project$Main$genericValueToString = function (genericValue) {
+	if (genericValue.$ === 'String') {
+		var str = genericValue.a;
+		return str;
+	} else {
+		return 'TODO: Unhandled type';
+	}
+};
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $edkv$elm_generic_dict$GenericDict$get = F3(
+	function (toString, key, _v0) {
+		var dict = _v0.a;
+		return A2(
+			$elm$core$Maybe$map,
+			$elm$core$Tuple$second,
+			A2(
+				$elm$core$Dict$get,
+				toString(key),
+				dict));
+	});
+var $author$project$Main$getValueAt = F2(
+	function (field, context) {
+		var fieldWithoutDot = A3($elm$core$String$replace, '.', '', field);
+		return A2(
+			$elm$core$Maybe$map,
+			$author$project$Main$genericValueToString,
+			A3(
+				$edkv$elm_generic_dict$GenericDict$get,
+				$author$project$Main$genericValueToString,
+				$andre_dietrich$elm_generic$Generic$String('\"' + (fieldWithoutDot + '\"')),
+				context));
+	});
+var $author$project$Main$updateFormFromConfig = F4(
+	function (singleButtonConfig, context, types, formDict) {
+		return A3(
+			$elm$core$List$foldl,
+			function (_v0) {
+				var maybeFormValue = _v0.a;
+				var formField = _v0.b;
+				var argumentType = _v0.c;
+				return function (dict) {
+					return A4($author$project$Main$updateFormAt, formField, argumentType, maybeFormValue, dict);
+				};
+			},
+			formDict,
+			A2(
+				$elm$core$List$map,
+				function (field) {
+					return _Utils_Tuple3(
+						A2(
+							$elm$core$Debug$log,
+							'getValueAt',
+							A2($author$project$Main$getValueAt, field.inputField, context)),
+						field.formField,
+						A2($author$project$Main$getArgumentTypeAt, singleButtonConfig.context + ('.' + field.inputField), types));
+				},
+				singleButtonConfig.fields));
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -9527,7 +9602,8 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							activeForm: $elm$core$Maybe$Just(singleButtonConfig.formToDisplay)
+							activeForm: $elm$core$Maybe$Just(singleButtonConfig.formToDisplay),
+							formInput: A4($author$project$Main$updateFormFromConfig, singleButtonConfig, dictValueValue, model.types, model.formInput)
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'UpdateFormAt':
@@ -9763,7 +9839,6 @@ var $elm$html$Html$select = _VirtualDom_node('select');
 var $elm$html$Html$td = _VirtualDom_node('td');
 var $elm$html$Html$tr = _VirtualDom_node('tr');
 var $author$project$Main$ArgumentEnum = {$: 'ArgumentEnum'};
-var $author$project$Main$ArgumentString = {$: 'ArgumentString'};
 var $author$project$Main$typeRefToArgumentType = function (_v0) {
 	var referrableType = _v0.a;
 	var isNullable = _v0.b;
@@ -10486,14 +10561,6 @@ var $author$project$Main$displayButton = F3(
 				},
 				buttonConfig));
 	});
-var $author$project$Main$genericValueToString = function (genericValue) {
-	if (genericValue.$ === 'String') {
-		var str = genericValue.a;
-		return str;
-	} else {
-		return 'TODO: Unhandled type';
-	}
-};
 var $edkv$elm_generic_dict$GenericDict$keys = function (_v0) {
 	var dict = _v0.a;
 	return A3(

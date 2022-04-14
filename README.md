@@ -77,8 +77,9 @@ display_form: "addProduct"
 ```
 - [x] Pass button config to the generic views
 - [x] When the current path matches the context, send the button_config and the the current data to the Msg 
-- [ ] Msg should run a series of updateFormAt, and then set the active form 
+- [x] Msg should run a series of updateFormAt, and then set the active form 
 - [ ] Read in configuration from Flags
+- [ ] TODO: Implement getArgumentTypeAt
 
 ## Advanced
 - [ ] Verify config against GraphQL endpoint
