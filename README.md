@@ -40,7 +40,7 @@ Inspired by https://github.com/4Catalyzer/graphql-explorer
 - [ ] inputFromTypeRef - Handle all types
 - [x] argToFormField - send additional type information to UpdateFormInput
 - [x] Handle enum types instead of just string (i.e. GraphQl.string) 
-- [ ] TODO: UnionRef
+- [x] TODO: UnionRef
 - [ ] Displaying UnionRef tables is probably wrong -- need to account for all fields first when constructing the header of the tables and then displaying the rows should be based on a list of fields, 
 - [ ] TODO: Handle Lists in QueryArgument
 - [x] Mutations
@@ -78,7 +78,7 @@ display_form: "addProduct"
 - [x] Pass button config to the generic views
 - [x] When the current path matches the context, send the button_config and the the current data to the Msg 
 - [x] Msg should run a series of updateFormAt, and then set the active form 
-- [ ] Read in configuration from Flags
+- [x] Read in configuration from Flags
 - [ ] TODO: Implement getArgumentTypeAt
 
 ## Advanced

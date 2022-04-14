@@ -10168,7 +10168,7 @@ var $author$project$Main$fieldArgumentsToForm = F4(
 					$elm$html$Html$table,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('table is-hoverable is-narrow is-bordered')
+							$elm$html$Html$Attributes$class('table is-fullwidth is-hoverable is-narrow is-bordered')
 						]),
 					_List_fromArray(
 						[
@@ -11067,7 +11067,8 @@ var $author$project$Main$view = function (model) {
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('container')
+				$elm$html$Html$Attributes$class('container'),
+				A2($elm$html$Html$Attributes$style, 'max-width', 'calc(100vw - 30px)')
 			]),
 		_List_fromArray(
 			[

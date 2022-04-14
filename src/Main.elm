@@ -425,7 +425,7 @@ apiInteractionsToTypeDict res =
 
 view : Model -> Html Msg
 view model =
-  div [Html.Attributes.class "container"]
+  div [Html.Attributes.class "container", Html.Attributes.style "max-width" "calc(100vw - 30px)"]
       [ case model.introspection of
           RemoteData.NotAsked ->
             configView model.config
@@ -821,7 +821,7 @@ fieldArgumentsToForm path dictTypeDef formDict fieldType =
   div
     [ Html.Attributes.class "table-container" ]
     [ table 
-      [ Html.Attributes.class "table is-hoverable is-narrow is-bordered"]
+      [ Html.Attributes.class "table is-fullwidth is-hoverable is-narrow is-bordered"]
       [ tbody 
         []
         (List.map (argToFormField path dictTypeDef formDict) fieldType.args)
